@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { database, ref, onValue, remove, push, set } from '@/lib/firebase';
-import { menuItems, categories, premiumItems, formatPrice, MenuItem } from '@/lib/menu';
+import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
 import { getMenuConfiguration, type MenuConfiguration, getDrinkDatabase, type DrinkDatabase, getCategoryDatabase } from '@/lib/menuManager';
 import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, saveWaiterAssignment, getContrastTextColor } from '@/lib/settings';
 import { getActualGeneratedTableNumbers } from '@/lib/tables';
