@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --evm-green: #009640;
+  --evm-yellow: #FFCC00;
+  --surface-dark: #0f1419;
+  --surface-card: #1a1f26;
+  --surface-elevated: #242b33;
+  --accent-primary: #3b82f6;
+  --accent-success: #10b981;
+  --accent-warning: #f59e0b;
+  --accent-danger: #ef4444;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255,255,255,0.08);
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--surface-dark);
+}
+
+/* Modern button styles */
+.btn-primary {
+  @apply font-medium py-3 px-6 rounded-lg text-base transition-all duration-200;
+  @apply bg-blue-600 text-white hover:bg-blue-500 active:scale-[0.98];
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 4px 12px rgba(59,130,246,0.15);
+}
+
+.btn-secondary {
+  @apply font-medium py-3 px-6 rounded-lg text-base transition-all duration-200;
+  @apply bg-slate-700 text-white hover:bg-slate-600 active:scale-[0.98];
+}
+
+.btn-success {
+  @apply font-medium py-3 px-6 rounded-lg text-base transition-all duration-200;
+  @apply bg-emerald-600 text-white hover:bg-emerald-500 active:scale-[0.98];
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 4px 12px rgba(16,185,129,0.15);
+}
+
+.btn-danger {
+  @apply font-medium py-3 px-6 rounded-lg text-base transition-all duration-200;
+  @apply bg-red-600 text-white hover:bg-red-500 active:scale-[0.98];
+}
+
+/* Modern card styles */
+.card {
+  @apply rounded-xl p-5;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+}
+
+.card-elevated {
+  @apply rounded-xl p-5;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Glass effect for overlays */
+.glass {
+  @apply backdrop-blur-xl;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.glass-dark {
+  @apply backdrop-blur-xl;
+  background: rgba(0,0,0,0.7);
+}
+
+/* Alert animations */
+.alert-red-blink {
+  animation: pulse-red-strong 0.6s ease-in-out infinite;
+}
+
+@keyframes pulse-red-strong {
+  0%, 100% { 
+    background-color: #dc2626; 
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+  }
+  50% { 
+    background-color: #fca5a5; 
+    transform: scale(1.03);
+    box-shadow: 0 0 40px rgba(220, 38, 38, 0.8);
+  }
+}
+
+/* Large readable text for bar display */
+.bar-display {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  @apply flex items-center;
+}
+
+.bar-table-number {
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 800;
+  @apply tracking-tight;
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Smooth transitions */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Focus states for accessibility */
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+}
+
+/* Input styles */
+input[type="number"],
+input[type="text"],
+input[type="password"] {
+  @apply transition-all duration-200;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+input[type="password"]:focus {
+  @apply border-blue-500 ring-2 ring-blue-200;
+}
+
+/* Modern gradient backgrounds */
+.gradient-green {
+  background: linear-gradient(135deg, var(--evm-green) 0%, #006830 100%);
+}
+
+.gradient-dark {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+/* Subtle hover effects */
+.hover-lift {
+  @apply transition-transform duration-200;
+}
+
+.hover-lift:hover {
+  @apply -translate-y-0.5;
+}
+
+/* Status indicator dots */
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-dot.online {
+  @apply bg-green-500 animate-pulse;
+}
+
+.status-dot.offline {
+  @apply bg-gray-400;
+}

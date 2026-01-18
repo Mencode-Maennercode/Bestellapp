@@ -1,0 +1,150 @@
+PraesensWert
+Dennis Heidenreich
+Josef-Martin-Weg 4
+53501 Grafschaft
+Tel: [Ihre Telefonnummer]
+E-Mail: Kontakt@PraesenzWert.de
+Web: www.praesenzwert.de
+
+VERTRAG ÜBER DIE NUTZUNG DES DIGITALEN BESTELLSYSTEMS FÜR VERANSTALTUNGEN
+zwischen
+
+PraesensWert
+vertreten durch Dennis Heidenreich
+Josef-Martin-Weg 4
+53501 Grafschaft
+
+nachfolgend "Anbieter" genannt
+
+und
+
+[Veranstalter/Unternehmen]
+[Anschrift]
+[Ansprechpartner]
+[E-Mail]
+[Telefon]
+
+nachfolgend "Nutzer" genannt
+
+§ 1 Vertragsgegenstand
+
+1.1 Gegenstand dieses Vertrages ist die zeitlich begrenzte Zurverfügungstellung des digitalen Bestellsystems "Karneval Bestellsystem" (nachfolgend "Software") für Veranstaltungen des Nutzers.
+
+1.2 Die Software ermöglicht:
+- Digitale Getränkebestellungen über QR-Code-Scanning
+- Theken-Ansicht mit farbcodierter Bestellübersicht
+- Kellner-App mit Tischzuweisung und Benachrichtigungen
+- Statistische Auswertungen und Umsatzdaten
+
+1.3 Die Software wird als Software-as-a-Service (SaaS) über die Plattform Vercel gehostet und ist webbasiert nutzbar.
+
+§ 2 Vertragsdauer
+
+2.1 Dieser Vertrag kommt für jede einzelne Veranstaltung zustande und beginnt mit dem Zeitpunkt der Freischaltung der Software für die jeweilige Veranstaltung.
+
+2.2 Die Vertragsdauer endet automatisch 3 Tage nach offiziellem Ende der Veranstaltung.
+
+2.3 Die Software und alle damit verbundenen Daten bleiben für 3 Tage nach Vertragsende online zugänglich, danach werden alle Daten unwiderruflich gelöscht.
+
+§ 3 Leistungsumfang des Anbieters
+
+3.1 Der Anbieter stellt dem Nutzer die Software für die Dauer der Veranstaltung zur Verfügung.
+
+3.2 Der Anbieter gewährleistet:
+- Technische Verfügbarkeit der Software auf der Plattform Vercel
+- Datenspeicherung in Firebase-Datenbanken
+- Grundlegende technische Unterstützung bei Systemausfällen
+- Zugriff auf statistische Auswertungen und Umsatzdaten
+
+3.3 Der Anbieter behält sich vor:
+- Werbung in der Software zu platzieren
+- Zugriff auf die Datenbank und statistische Daten zu behalten
+
+§ 4 Mitwirkungspflichten des Nutzers
+
+4.1 Der Nutzer ist verantwortlich für:
+- Bereitstellung einer stabilen Internetverbindung vor Ort
+- Bereitstellung von ausreichend Handys/Tablets für Gäste und Personal
+- Organisation und Druck der erforderlichen QR-Codes
+- Schulung des Personals in der Bedienung der Software
+
+4.2 Der Nutzer stellt sicher, dass alle technischen Voraussetzungen für den Betrieb der Software erfüllt sind.
+
+§ 5 Vergütung
+
+5.1 Für die Nutzung der Software zahlt der Nutzer eine Vergütung in Höhe von 1,5% (einhundertfünfzig Prozent) des durch die Software generierten Umsatzes.
+
+5.2 Die Umsatzermittlung erfolgt auf Basis der in der Software erfassten Bestellungen.
+
+5.3 Die Abrechnung und Zahlung erfolgt innerhalb von 14 Tagen nach Vertragsende.
+
+§ 6 Haftung und Gewährleistung
+
+6.1 Die Nutzung der Software erfolgt auf eigene Gefahr des Nutzers.
+
+6.2 Der Anbieter übernimmt keine Haftung für:
+- Technische Ausfälle aufgrund von Internetverbindungsproblemen des Nutzers
+- Fehlbedienungen durch Nutzer oder dessen Personal
+- Datenverlust aufgrund unsachgemäßer Nutzung
+- Jegliche direkten oder indirekten Schäden, die aus der Nutzung der Software entstehen
+
+6.3 Die Haftung des Anbieters ist auf Vorsatz und grobe Fahrlässigkeit beschränkt.
+
+6.4 Jegliche weitergehende Haftung wird ausgeschlossen, soweit gesetzlich zulässig.
+
+§ 7 Datenschutz und Datensicherheit
+
+7.1 Der Anbieter verarbeitet personenbezogene Daten als Auftragsverarbeiter im Sinne der DSGVO.
+
+7.2 Die Daten werden ausschließlich in Firebase-Datenbanken gespeichert.
+
+7.3 Nach Ablauf der 3-tägigen Aufbewahrungsfrist werden alle Daten unwiderruflich gelöscht.
+
+7.4 Der Nutzer ist verantwortlich für die Einhaltung der datenschutzrechtlichen Vorschriften gegenüber seinen Gästen.
+
+§ 8 Urheberrecht und Nutzungsrechte
+
+8.1 Die Software und alle zugehörigen Komponenten stehen im Eigentum des Anbieters.
+
+8.2 Dem Nutzer wird für die Vertragsdauer ein einfaches, nicht übertragbares Nutzungsrecht eingeräumt.
+
+8.3 Die Software wurde vollständig durch KI (künstliche Intelligenz) programmiert.
+
+§ 9 Anpassungen und Zusatzleistungen
+
+9.1 Anpassungen der Software an individuelle Anforderungen des Nutzers können gegen gesondertes Honorar vereinbart werden.
+
+9.2 Solche Anpassungen bedürfen einer schriftlichen Vereinbarung und gesonderter Vergütungsregelung.
+
+§ 10 Vertragsende
+
+10.1 Dieser Vertrag endet automatisch 3 Tage nach Veranstaltungsende.
+
+10.2 Mit Vertragsende erlischt das Nutzungsrecht an der Software.
+
+10.3 Der Anbieter ist nach Vertragsende berechtigt, alle gespeicherten Daten zu löschen.
+
+§ 11 Schlussbestimmungen
+
+11.1 Es gilt das Recht der Bundesrepublik Deutschland.
+
+11.2 Erfüllungsort und Gerichtsstand ist Grafschaft.
+
+11.3 Änderungen und Ergänzungen dieses Vertrages bedürfen der Schriftform.
+
+11.4 Sollten einzelne Bestimmungen dieses Vertrages unwirksam sein, bleibt der Vertrag im Übrigen wirksam.
+
+§ 12 Zustimmung
+
+Ort, Datum: ______________________
+
+_________________________
+PraesensWert
+(Dennis Heidenreich)
+
+Ort, Datum: ______________________
+
+_________________________
+[Nutzer/Unterschrift]
+
+[Name des Unternehmens/Veranstalters]
