@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 import { database, ref, push, onValue } from '@/lib/firebase';
 import { getTableByCode, isValidTableCode } from '@/lib/dynamicTables';
-import { menuItems, categories, premiumItems, formatPrice, MenuItem } from '@/lib/menu';
+import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
 import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, getContrastTextColor } from '@/lib/settings';
 import { getMenuConfiguration, MenuConfiguration, getCategoryDatabase, getDrinkDatabase, DrinkDatabase } from '@/lib/menuManager';
 
