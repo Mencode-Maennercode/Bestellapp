@@ -370,9 +370,13 @@ export const addCategoryToDatabase = async (category: {
 }): Promise<string> => {
   const db = await getCategoryDatabase();
 
-  const generatedId = category.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  // Generate unique ID with timestamp to avoid conflicts when recreating categories with same name
+  const baseId = category.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const timestamp = Date.now();
+  const generatedId = `${baseId}-${timestamp}`;
   const id = category.id ?? generatedId;
 
+  // If category already exists with this exact ID, return it (shouldn't happen with timestamp)
   if (db.categories && db.categories[id]) {
     return id;
   }

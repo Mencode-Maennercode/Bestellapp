@@ -82,6 +82,19 @@ const Impressum: NextPage = () => {
                 schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers.
               </p>
             </section>
+            
+            <section>
+              <h2 className="text-xl font-semibold mb-3">Kooperation</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Diese App wird präsentiert von PräsenzWert in Kooperation mit Dorfgarde Nierendorf.
+              </p>
+            </section>
+            
+            <section className="border-t pt-4">
+              <p className="text-sm text-gray-500 text-center">
+                © 2026 PräsenzWert - Alle Rechte vorbehalten
+              </p>
+            </section>
           </div>
         </div>
       </div>

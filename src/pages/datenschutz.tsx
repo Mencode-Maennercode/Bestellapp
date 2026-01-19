@@ -113,6 +113,40 @@ const Datenschutz: NextPage = () => {
                 (Erfüllung des Vertrags über die Getränkebestellung).
               </p>
             </section>
+            
+            <section>
+              <h2 className="text-xl font-semibold mb-3">9. Bewertungen und Kontaktformular</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Wenn Sie eine Bewertung abgeben oder das Kontaktformular nutzen, werden folgende Daten erhoben:
+              </p>
+              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1 mt-2">
+                <li>Bewertung (Sterne-Rating)</li>
+                <li>Optional: Name und E-Mail-Adresse (nur bei Kontaktaufnahme)</li>
+                <li>Zeitstempel der Bewertung</li>
+              </ul>
+              <p className="text-sm text-gray-600 leading-relaxed mt-2">
+                <strong>Zweck:</strong> Verbesserung unseres Services und Kontaktaufnahme auf Wunsch<br/>
+                <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) bzw. lit. f DSGVO (berechtigtes Interesse)<br/>
+                <strong>Speicherdauer:</strong> Bewertungen werden dauerhaft gespeichert, Kontaktdaten nur bei ausdrücklichem Wunsch
+              </p>
+            </section>
+            
+            <section>
+              <h2 className="text-xl font-semibold mb-3">10. Progressive Web App (PWA)</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Diese Website kann als Progressive Web App (PWA) auf Ihrem Gerät installiert werden. 
+                Die Installation erfolgt lokal auf Ihrem Gerät und überträgt keine zusätzlichen Daten an uns.
+              </p>
+            </section>
+            
+            <section className="border-t pt-4">
+              <p className="text-sm text-gray-500 text-center">
+                © 2026 PräsenzWert - Alle Rechte vorbehalten
+              </p>
+              <p className="text-xs text-gray-400 text-center mt-2">
+                Stand: Januar 2026
+              </p>
+            </section>
           </div>
         </div>
       </div>

@@ -162,6 +162,28 @@ export default function WaiterPage() {
   const [drinkDatabase, setDrinkDatabase] = useState<DrinkDatabase | null>(null);
   const [customCategories, setCustomCategories] = useState<{ id: string; name: string; emoji: string }[]>([]);
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
+
+  // Merge default categories with custom categories (DB overrides defaults by id)
+  const mergedCategories = useMemo(() => {
+    const defaultMap: Record<string, { id: string; name: string; emoji: string }> = {};
+    categories.forEach(c => { defaultMap[c.id] = { ...c }; });
+    customCategories.forEach(cc => { defaultMap[cc.id] = { ...defaultMap[cc.id], ...cc }; });
+    const defaultsWithOverrides = categories.map(c => defaultMap[c.id]);
+    const dbOnly = customCategories.filter(cc => !categories.find(c => c.id === cc.id));
+    const all = [...defaultsWithOverrides, ...dbOnly];
+
+    if (!categoryOrder || categoryOrder.length === 0) return all;
+    const orderIndex: Record<string, number> = {};
+    categoryOrder.forEach((id, idx) => { orderIndex[id] = idx; });
+    return [...all].sort((a, b) => {
+      const ai = orderIndex[a.id];
+      const bi = orderIndex[b.id];
+      if (ai === undefined && bi === undefined) return 0;
+      if (ai === undefined) return 1;
+      if (bi === undefined) return -1;
+      return ai - bi;
+    });
+  }, [customCategories, categoryOrder]);
   
   // Selection modals for waiter
   const [showWaiterBottleSelection, setShowWaiterBottleSelection] = useState(false);
@@ -290,6 +312,8 @@ export default function WaiterPage() {
           ...base,
           isPopular: itemConfig?.isPopular ?? base.isPopular ?? false,
           isSoldOut: itemConfig?.isSoldOut ?? base.isSoldOut ?? false,
+          // Apply emoji override from configuration
+          emoji: itemConfig?.emoji ?? base.emoji,
           // Apply glass configuration from Firebase (critical!)
           askForGlasses: itemConfig?.askForGlasses ?? base.askForGlasses ?? false,
           glassType: itemConfig?.glassType ?? base.glassType ?? 'beer',
@@ -1575,11 +1599,7 @@ export default function WaiterPage() {
               <button
                 key={tableNum}
                 onClick={() => handleOpenOrderForm(tableNum)}
-                className="px-4 py-2 rounded-lg font-bold text-sm active:scale-95 transition-transform"
-                style={{ 
-                  backgroundColor: settings.colors.primaryKellner,
-                  color: getContrastTextColor(settings.colors.primaryKellner)
-                }}
+                className="px-4 py-2 h-9 min-w-[3rem] flex items-center justify-center rounded-lg font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
               >
                 T{tableNum}
               </button>
@@ -1587,22 +1607,14 @@ export default function WaiterPage() {
             {/* Free Booking Button */}
             <button
               onClick={handleStartFreeBooking}
-              className="px-4 py-2 rounded-lg font-bold text-sm active:scale-95 transition-transform"
-              style={{ 
-                backgroundColor: settings.colors.secondaryKellner,
-                color: getContrastTextColor(settings.colors.secondaryKellner)
-              }}
+              className="px-4 py-2 rounded-lg font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
             >
               📝 Frei
             </button>
             {/* Add Table Button */}
             <button
               onClick={() => setShowAddTableModal(true)}
-              className="px-4 py-2 rounded-lg font-bold text-sm active:scale-95 transition-transform"
-              style={{ 
-                backgroundColor: settings.colors.secondaryKellner,
-                color: getContrastTextColor(settings.colors.secondaryKellner)
-              }}
+              className="px-4 py-2 rounded-lg font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
             >
               +/- Tisch
             </button>
@@ -1687,43 +1699,17 @@ export default function WaiterPage() {
                     🍹 Alle
                   </button>
                   {/* Merged and ordered categories */}
-                  {(() => {
-                    const allCats = [...categories, ...customCategories];
-                    if (!categoryOrder || categoryOrder.length === 0) {
-                      return allCats.map(cat => (
-                        <button
-                          key={cat.id}
-                          onClick={() => setActiveOrderCategory(cat.id)}
-                          className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
-                            activeOrderCategory === cat.id ? 'bg-evm-green text-white' : 'bg-white text-gray-700'
-                          }`}
-                        >
-                          {cat.emoji} {cat.name}
-                        </button>
-                      ));
-                    }
-                    const orderIndex: Record<string, number> = {};
-                    categoryOrder.forEach((id, idx) => { orderIndex[id] = idx; });
-                    const sorted = [...allCats].sort((a, b) => {
-                      const ai = orderIndex[a.id];
-                      const bi = orderIndex[b.id];
-                      if (ai === undefined && bi === undefined) return 0;
-                      if (ai === undefined) return 1;
-                      if (bi === undefined) return -1;
-                      return ai - bi;
-                    });
-                    return sorted.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setActiveOrderCategory(cat.id)}
-                        className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
-                          activeOrderCategory === cat.id ? 'bg-evm-green text-white' : 'bg-white text-gray-700'
-                        }`}
-                      >
-                        {cat.emoji} {cat.name}
-                      </button>
-                    ));
-                  })()}
+                  {mergedCategories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveOrderCategory(cat.id)}
+                      className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
+                        activeOrderCategory === cat.id ? 'bg-evm-green text-white' : 'bg-white text-gray-700'
+                      }`}
+                    >
+                      {cat.emoji} {cat.name}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Premium Items - "Für den Tisch" Section - collapsible */}
@@ -1821,7 +1807,7 @@ export default function WaiterPage() {
                 {/* Items List - match table page styling */}
                 <div className="p-4">
                   <h3 className="text-sm font-bold text-gray-600 mb-2">
-                    {activeOrderCategory === 'alle' ? '🥤 Getränke' : categories.find(c => c.id === activeOrderCategory)?.emoji + ' ' + categories.find(c => c.id === activeOrderCategory)?.name}
+                    {activeOrderCategory === 'alle' ? '🥤 Getränke' : mergedCategories.find(c => c.id === activeOrderCategory)?.emoji + ' ' + mergedCategories.find(c => c.id === activeOrderCategory)?.name}
                   </h3>
                   <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                     {getFilteredOrderItems().map(item => (

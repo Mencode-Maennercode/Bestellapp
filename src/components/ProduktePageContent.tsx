@@ -68,8 +68,11 @@ const Produkte: NextPage = () => {
   const [drinkDatabase, setDrinkDatabase] = useState<DrinkDatabase | null>(null);
   const [showDrinkModal, setShowDrinkModal] = useState(false);
   const [selectedCategoryForDrinks, setSelectedCategoryForDrinks] = useState<string>('all');
+  const [targetCategoryForDrinks, setTargetCategoryForDrinks] = useState<string>(''); // The category we're adding drinks TO
   const [drinkSearchTerm, setDrinkSearchTerm] = useState('');
   const [showAddDrinkForm, setShowAddDrinkForm] = useState(false);
+  const [showAllProducts, setShowAllProducts] = useState(true);
+  const [categorySearchTerm, setCategorySearchTerm] = useState('');
   const [newDrinkForm, setNewDrinkForm] = useState({
     name: '',
     emoji: '🍺',
@@ -81,15 +84,95 @@ const Produkte: NextPage = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [extraCategories, setExtraCategories] = useState<{ id: string; name: string; emoji: string }[]>([]);
+  const [allDatabaseCategories, setAllDatabaseCategories] = useState<{ id: string; name: string; emoji: string }[]>([]);
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryEmoji, setNewCategoryEmoji] = useState('📂');
+  const [useExistingCategory, setUseExistingCategory] = useState(false);
+  const [selectedExistingCategory, setSelectedExistingCategory] = useState('');
   const [emojiSearch, setEmojiSearch] = useState('');
   const [productEmojiSearch, setProductEmojiSearch] = useState('');
   const [categoryEmojiSearch, setCategoryEmojiSearch] = useState('');
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryEmoji, setEditingCategoryEmoji] = useState('');
-  const emojiPalette = ['🍺','🥤','🍷','🥂','🥃','🍾','🍋','🍊','🍎','📦','✨','📂','🍸','🍹','🍇','🍓','🍒'];
+  const emojiPalette = ['🍺','🥤','🍷','🥂','🥃','🍾','🍋','🍊','🍎','📦','✨','📂','🍸','🍹','🍇','🍓','🍒','🍕','🍔','🌭','🍟','🥙','🌮','🌯','🥗','🍝','🍜','🍲','🥘','🍱','🍛','🍣','🍤','🥟','🍩','🍪','🎂','🍰','🧁','🥧','🍦','🍨','🥞','🧇','🥓','🍖','🍗','🥩','🧀','🥨','🥖','🥐','🍞'];
+
+  // Keyword index to make emoji search useful with text input (German synonyms)
+  const emojiKeywords: Record<string, string[]> = useMemo(() => ({
+    '🍺': ['bier','pils','helles','lager','krug','beer'],
+    '🥤': ['softdrink','cola','fanta','spezi','limonade','limo','saft','schorle','soft'],
+    '🍷': ['wein','rotwein','weißwein','weisswein','wine'],
+    '🥂': ['sekt','prosecco','schampus','champagner','anstoßen','toast'],
+    '🥃': ['whisky','schnaps','shot','short','geist','likör'],
+    '🍾': ['flasche','bottle','champagner','sekt','wein'],
+    '🍋': ['zitrone','lemon','zitronig','limette'],
+    '🍊': ['orange','orangensaft','apfelsine','zitrus'],
+    '🍎': ['apfel','apfelsaft','apfelwein'],
+    '📦': ['kiste','kasten','crate','gebinde'],
+    '✨': ['besonders','highlight','special','premium','glitzer'],
+    '📂': ['kategorie','ordner','folder','sammlung'],
+    '🍸': ['cocktail','martini','longdrink'],
+    '🍹': ['cocktail','pina','colada','mai tai','longdrink','tropisch'],
+    '🍇': ['traube','traubensaft','grapes'],
+    '🍓': ['erdbeere','strawberry'],
+    '🍒': ['kirsche','kirsch','cherry'],
+    '🍕': ['pizza','italienisch','italian'],
+    '🍔': ['burger','hamburger','cheeseburger'],
+    '🌭': ['hotdog','wurst','würstchen'],
+    '🍟': ['pommes','fries','fritten','kartoffel'],
+    '🥙': ['döner','kebab','wrap','dürüm'],
+    '🌮': ['taco','mexikanisch','mexican'],
+    '🌯': ['burrito','wrap','mexikanisch'],
+    '🥗': ['salat','salad','gesund','healthy'],
+    '🍝': ['pasta','nudeln','spaghetti','italienisch'],
+    '🍜': ['suppe','ramen','nudelsuppe','soup'],
+    '🍲': ['eintopf','stew','topf'],
+    '🥘': ['pfanne','paella','gericht'],
+    '🍱': ['bento','box','lunchbox'],
+    '🍛': ['curry','reis','indisch'],
+    '🍣': ['sushi','japanisch','japanese'],
+    '🍤': ['garnele','shrimp','meeresfrüchte'],
+    '🥟': ['dumpling','teigtasche','gyoza'],
+    '🍩': ['donut','süß','sweet','gebäck'],
+    '🍪': ['keks','cookie','plätzchen'],
+    '🎂': ['kuchen','torte','cake','geburtstag'],
+    '🍰': ['torte','kuchen','cake','dessert'],
+    '🧁': ['cupcake','muffin','törtchen'],
+    '🥧': ['pie','kuchen','apfelkuchen'],
+    '🍦': ['eis','eiscreme','ice cream','softeis'],
+    '🍨': ['eis','eiscreme','ice cream','becher'],
+    '🥞': ['pfannkuchen','pancake','crepe'],
+    '🧇': ['waffel','waffle'],
+    '🥓': ['speck','bacon','frühstück'],
+    '🍖': ['fleisch','meat','knochen'],
+    '🍗': ['hähnchen','chicken','geflügel'],
+    '🥩': ['steak','fleisch','meat','rind'],
+    '🧀': ['käse','cheese'],
+    '🥨': ['brezel','pretzel','laugengebäck'],
+    '🥖': ['baguette','brot','bread','französisch'],
+    '🥐': ['croissant','hörnchen','französisch'],
+    '🍞': ['brot','bread','toast']
+  }), []);
+
+  // Filter categories by search term
+  const filteredCategories = useMemo(() => {
+    if (!categorySearchTerm.trim()) return allDatabaseCategories;
+    const term = categorySearchTerm.toLowerCase();
+    return allDatabaseCategories.filter(cat => 
+      cat.name.toLowerCase().includes(term) || 
+      cat.id.toLowerCase().includes(term)
+    );
+  }, [allDatabaseCategories, categorySearchTerm]);
+
+  const filterEmojiBySearch = (search: string) => {
+    const s = search.trim().toLowerCase();
+    if (!s) return emojiPalette;
+    return emojiPalette.filter(e => {
+      if (e.includes(s)) return true; // direct match if user pasted emoji
+      const keys = emojiKeywords[e] || [];
+      return keys.some(k => k.includes(s));
+    });
+  };
 
   // Load menu configuration and drink database on mount
   useEffect(() => {
@@ -129,6 +212,7 @@ const Produkte: NextPage = () => {
             emoji: cat.emoji
           }));
           setExtraCategories(cats);
+          setAllDatabaseCategories(cats); // Store ALL categories from database for selection
         }
         if (db.order && Array.isArray(db.order)) {
           setCategoryOrder(db.order);
@@ -203,9 +287,18 @@ const Produkte: NextPage = () => {
     return [...activeMenuItems, ...customItems];
   }, [menuConfig, menuItems, drinkDatabase]);
 
-  // Merge default categories with extra categories from database
+  // Merge default categories with extra categories from database (DB overrides default by id)
   const mergedCategories = useMemo(() => {
-    const all = [...categories, ...extraCategories];
+    // Start with defaults
+    const defaultMap: Record<string, { id: string; name: string; emoji: string }> = {};
+    categories.forEach(c => { defaultMap[c.id] = { ...c }; });
+    // Overlay DB entries (override emoji/name if same id)
+    extraCategories.forEach(ec => { defaultMap[ec.id] = { ...defaultMap[ec.id], ...ec }; });
+    // Build list preserving default order, then append DB-only categories
+    const defaultsWithOverrides = categories.map(c => defaultMap[c.id]);
+    const dbOnly = extraCategories.filter(ec => !categories.find(c => c.id === ec.id));
+    const all = [...defaultsWithOverrides, ...dbOnly];
+
     if (!categoryOrder || categoryOrder.length === 0) return all;
     const orderIndex: Record<string, number> = {};
     categoryOrder.forEach((id, idx) => { orderIndex[id] = idx; });
@@ -237,6 +330,20 @@ const Produkte: NextPage = () => {
     });
   }, [configuredItems, searchTerm, selectedCategory, priceRange, showSoldOutOnly, showTableOnly]);
 
+  // Determine if any filter is active (beyond the default view)
+  const isFilterActive = useMemo(() => {
+    const defaultMin = 0;
+    const defaultMax = 100;
+    return (
+      searchTerm.trim() !== '' ||
+      selectedCategory !== 'all' ||
+      showSoldOutOnly ||
+      showTableOnly ||
+      priceRange.min !== defaultMin ||
+      priceRange.max !== defaultMax
+    );
+  }, [searchTerm, selectedCategory, showSoldOutOnly, showTableOnly, priceRange]);
+
   // Filter sold out items for statistics
   const availableItems = useMemo(() => {
     return filteredItems.filter(item => !item.isSoldOut);
@@ -254,8 +361,9 @@ const Produkte: NextPage = () => {
         .filter(item => filteredItems.includes(item))
         .sort((a, b) => a.price - b.price)
     }));
-    return result;
-  }, [configuredItems, filteredItems, mergedCategories, selectedCategory]);
+    // When filters are active, only show categories that actually have matching items
+    return isFilterActive ? result.filter(c => c.items.length > 0) : result;
+  }, [configuredItems, filteredItems, mergedCategories, selectedCategory, isFilterActive]);
 
   // Calculate statistics for filtered items
   const totalItems = filteredItems.length;
@@ -576,7 +684,8 @@ const Produkte: NextPage = () => {
 
   // Open drink selection modal for category
   const handleOpenDrinkModal = (categoryId: string) => {
-    setSelectedCategoryForDrinks(categoryId);
+    setTargetCategoryForDrinks(categoryId); // This is where drinks will be added
+    setSelectedCategoryForDrinks('all'); // Start with 'all' filter
     setShowDrinkModal(true);
     setDrinkSearchTerm('');
     setShowAddDrinkForm(false);
@@ -594,8 +703,8 @@ const Produkte: NextPage = () => {
         return;
       }
       
-      // Use the currently selected category from the modal, not the drink's original category
-      const targetCategory = selectedCategoryForDrinks === 'all' ? drink.category : selectedCategoryForDrinks;
+      // Use the TARGET category (where the modal was opened from), not the filter
+      const targetCategory = targetCategoryForDrinks;
       
       await updateItemConfiguration(drinkId, {
         isPremium: false,
@@ -690,11 +799,14 @@ const Produkte: NextPage = () => {
         const matchesCategory = selectedCategoryForDrinks === 'all' || drink.category === selectedCategoryForDrinks;
         const notInMenu = !menuConfig?.items[id];
         
-        return matchesSearch && matchesCategory && notInMenu;
+        // Show all products if showAllProducts is true, otherwise only show products not in menu
+        const shouldShow = showAllProducts || notInMenu;
+        
+        return matchesSearch && matchesCategory && shouldShow;
       })
       .map(([id, drink]) => ({ id, ...drink }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [drinkDatabase, drinkSearchTerm, selectedCategoryForDrinks, menuConfig]);
+  }, [drinkDatabase, drinkSearchTerm, selectedCategoryForDrinks, menuConfig, showAllProducts]);
 
   // Handle moving item to category
   const handleMoveItemToCategory = async (itemId: string, targetCategoryId: string) => {
@@ -716,31 +828,37 @@ const Produkte: NextPage = () => {
   const handleUpdateCategoryEmoji = async (categoryId: string, newEmoji: string) => {
     try {
       const db = await getCategoryDatabase();
-      if (db.categories && db.categories[categoryId]) {
-        await updateCategoryDatabase({
-          categories: {
-            ...db.categories,
-            [categoryId]: {
-              ...db.categories[categoryId],
-              emoji: newEmoji
-            }
-          }
-        });
-        // Reload categories
-        const updatedDb = await getCategoryDatabase();
-        if (updatedDb.categories) {
-          const cats = Object.entries(updatedDb.categories).map(([id, cat]: [string, any]) => ({
-            id,
-            name: cat.name,
-            emoji: cat.emoji
-          }));
-          setExtraCategories(cats);
+      const existing = db.categories?.[categoryId];
+      const baseName = mergedCategories.find(c => c.id === categoryId)?.name || existing?.name || 'Kategorie';
+      const updatedCategories = {
+        ...(db.categories || {}),
+        [categoryId]: {
+          ...(existing || {}),
+          name: baseName,
+          emoji: newEmoji,
+          // mark as not custom if it came from defaults, but we still persist override
+          isCustom: existing?.isCustom ?? false
         }
-        setEditingCategoryId(null);
-        setEditingCategoryEmoji('');
-        setCategoryEmojiSearch('');
-        alert('✅ Emoji aktualisiert!');
+      } as any;
+
+      await updateCategoryDatabase({
+        categories: updatedCategories
+      });
+
+      // Reload categories
+      const updatedDb = await getCategoryDatabase();
+      if (updatedDb.categories) {
+        const cats = Object.entries(updatedDb.categories).map(([id, cat]: [string, any]) => ({
+          id,
+          name: cat.name,
+          emoji: cat.emoji
+        }));
+        setExtraCategories(cats);
       }
+      setEditingCategoryId(null);
+      setEditingCategoryEmoji('');
+      setCategoryEmojiSearch('');
+      alert('✅ Emoji aktualisiert!');
     } catch (error) {
       console.error('Failed to update category emoji:', error);
       alert('❌ Fehler beim Aktualisieren des Emojis');
@@ -770,6 +888,7 @@ const Produkte: NextPage = () => {
           emoji: cat.emoji
         }));
         setExtraCategories(cats);
+        setAllDatabaseCategories(cats); // Update all database categories
       }
       
       // Reset form and close modal
@@ -802,8 +921,10 @@ const Produkte: NextPage = () => {
           emoji: cat.emoji
         }));
         setExtraCategories(cats);
+        setAllDatabaseCategories(cats); // Update all database categories
       } else {
         setExtraCategories([]);
+        setAllDatabaseCategories([]);
       }
       
       alert('✅ Kategorie erfolgreich gelöscht!');
@@ -1252,8 +1373,7 @@ const Produkte: NextPage = () => {
                                   />
                                 </div>
                                 <div className="flex flex-wrap gap-1">
-                                  {emojiPalette
-                                    .filter(e => !productEmojiSearch || e.includes(productEmojiSearch))
+                                  {filterEmojiBySearch(productEmojiSearch)
                                     .map(e => (
                                       <button
                                         key={e}
@@ -1564,13 +1684,16 @@ const Produkte: NextPage = () => {
                     </button>
                   </div>
                   <p className="text-blue-100 mt-1">
-                    Kategorie: {mergedCategories.find(c => c.id === selectedCategoryForDrinks)?.name || 'Alle'}
+                    Hinzufügen zu: <strong>{mergedCategories.find(c => c.id === targetCategoryForDrinks)?.name || 'Unbekannt'}</strong>
+                  </p>
+                  <p className="text-blue-100 text-sm">
+                    Filter: {mergedCategories.find(c => c.id === selectedCategoryForDrinks)?.name || 'Alle'}
                   </p>
                 </div>
 
                 <div className="p-6">
-                  {/* Search Bar */}
-                  <div className="mb-4">
+                  {/* Search Bar and Filter Toggle */}
+                  <div className="mb-4 space-y-3">
                     <input
                       type="text"
                       value={drinkSearchTerm}
@@ -1578,6 +1701,19 @@ const Produkte: NextPage = () => {
                       placeholder="Getränke suchen..."
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showAllProducts}
+                          onChange={(e) => setShowAllProducts(e.target.checked)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">
+                          Alle Produkte anzeigen (auch bereits hinzugefügte)
+                        </span>
+                      </label>
+                    </div>
                   </div>
 
                   {/* Add New Drink Button */}
@@ -1603,13 +1739,15 @@ const Produkte: NextPage = () => {
                           placeholder="Name*"
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
-                        <input
-                          type="text"
-                          value={newDrinkForm.emoji}
-                          onChange={(e) => setNewDrinkForm(prev => ({ ...prev, emoji: e.target.value }))}
-                          placeholder="Emoji 🍺"
-                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        <div>
+                          <input
+                            type="text"
+                            value={newDrinkForm.emoji}
+                            onChange={(e) => setNewDrinkForm(prev => ({ ...prev, emoji: e.target.value }))}
+                            placeholder="Emoji 🍺"
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                          />
+                        </div>
                         <input
                           type="number"
                           value={newDrinkForm.price}
@@ -1644,6 +1782,36 @@ const Produkte: NextPage = () => {
                           className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
+                      
+                      {/* Emoji Palette for New Drink */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-medium text-blue-800">🎨 Emoji wählen:</p>
+                          <input
+                            type="text"
+                            value={emojiSearch}
+                            onChange={(e) => setEmojiSearch(e.target.value)}
+                            placeholder="Suchen..."
+                            className="px-2 py-1 text-xs border border-blue-300 rounded w-32"
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+                          {filterEmojiBySearch(emojiSearch)
+                            .map(e => (
+                              <button
+                                key={e}
+                                type="button"
+                                onClick={() => setNewDrinkForm(prev => ({ ...prev, emoji: e }))}
+                                className={`px-2 py-1 rounded border text-lg hover:bg-blue-100 ${
+                                  newDrinkForm.emoji === e ? 'border-blue-500 bg-blue-100' : 'border-gray-300'
+                                }`}
+                              >
+                                {e}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                      
                       <div className="flex gap-2 mt-3">
                         <button
                           onClick={handleAddNewDrink}
@@ -1688,10 +1856,17 @@ const Produkte: NextPage = () => {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {filteredDrinks.map((drink) => (
+                        {filteredDrinks.map((drink) => {
+                          const isInMenu = menuConfig?.items[drink.id];
+                          const currentCategory = isInMenu ? (menuConfig.items[drink.id].category || drink.category) : drink.category;
+                          const categoryName = mergedCategories.find(c => c.id === currentCategory)?.name || currentCategory;
+                          
+                          return (
                           <div
                             key={drink.id}
-                            className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors"
+                            className={`border rounded-lg p-3 hover:bg-gray-50 transition-colors ${
+                              isInMenu ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
+                            }`}
                           >
                             <div className="flex justify-between items-start">
                               <div className="flex items-center gap-2">
@@ -1701,11 +1876,18 @@ const Produkte: NextPage = () => {
                                   {drink.size && (
                                     <span className="text-sm text-gray-500">{drink.size}</span>
                                   )}
-                                  {drink.isCustom && (
-                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-2">
-                                      Eigenes
-                                    </span>
-                                  )}
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {drink.isCustom && (
+                                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                        Eigenes
+                                      </span>
+                                    )}
+                                    {isInMenu && (
+                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                        In Menü: {categoryName}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               <div className="text-right">
@@ -1715,7 +1897,7 @@ const Produkte: NextPage = () => {
                                   disabled={isUpdating === drink.id}
                                   className="mt-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
                                 >
-                                  {isUpdating === drink.id ? '...' : '➕ Hinzufügen'}
+                                  {isUpdating === drink.id ? '...' : (isInMenu ? '➕ Erneut hinzufügen' : '➕ Hinzufügen')}
                                 </button>
                               </div>
                             </div>
@@ -1723,7 +1905,8 @@ const Produkte: NextPage = () => {
                               <p className="text-sm text-gray-600 mt-2">{drink.description}</p>
                             )}
                           </div>
-                        ))}
+                        );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1736,19 +1919,90 @@ const Produkte: NextPage = () => {
           {showCategoryModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">📂 Neue Kategorie erstellen</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">📂 Kategorie hinzufügen</h3>
                 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Kategoriename*</label>
-                    <input
-                      type="text"
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder="z.B. Cocktails"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
+                  {/* Toggle between new and existing category */}
+                  <div className="flex gap-4 mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={!useExistingCategory}
+                        onChange={() => setUseExistingCategory(false)}
+                        className="w-4 h-4 text-purple-600"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Neue Kategorie erstellen</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={useExistingCategory}
+                        onChange={() => setUseExistingCategory(true)}
+                        className="w-4 h-4 text-purple-600"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Bestehende wählen</span>
+                    </label>
                   </div>
+
+                  {useExistingCategory ? (
+                    /* Select from existing categories - searchable list */
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Kategorie auswählen*</label>
+                      <input
+                        type="text"
+                        value={categorySearchTerm}
+                        onChange={(e) => setCategorySearchTerm(e.target.value)}
+                        placeholder="Kategorie suchen..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 mb-2"
+                      />
+                      <div className="border-2 border-purple-300 rounded-lg max-h-96 min-h-[300px] overflow-y-auto bg-white shadow-inner">
+                        {filteredCategories.length === 0 ? (
+                          <div className="p-8 text-center text-gray-500">
+                            <div className="text-4xl mb-2">🔍</div>
+                            <p className="font-medium">Keine Kategorien gefunden</p>
+                            <p className="text-sm mt-1">Versuche einen anderen Suchbegriff</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="sticky top-0 bg-purple-50 px-4 py-2 text-xs font-semibold text-purple-700 border-b border-purple-200">
+                              {filteredCategories.length} Kategorie{filteredCategories.length !== 1 ? 'n' : ''} gefunden
+                            </div>
+                            {filteredCategories.map((cat) => (
+                              <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => setSelectedExistingCategory(cat.id)}
+                                className={`w-full text-left px-4 py-4 hover:bg-purple-50 border-b border-gray-200 last:border-b-0 transition-all ${
+                                  selectedExistingCategory === cat.id ? 'bg-purple-100 font-semibold border-l-4 border-l-purple-600' : ''
+                                }`}
+                              >
+                                <span className="text-2xl mr-3">{cat.emoji}</span>
+                                <span className="text-base">{cat.name}</span>
+                                {selectedExistingCategory === cat.id && (
+                                  <span className="float-right text-purple-600 text-xl">✓</span>
+                                )}
+                              </button>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Zeigt ALLE jemals erstellten Kategorien aus der Datenbank (auch inaktive).
+                      </p>
+                    </div>
+                  ) : (
+                    /* Create new category */
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Kategoriename*</label>
+                        <input
+                          type="text"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder="z.B. Cocktails"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        />
+                      </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Emoji</label>
@@ -1769,8 +2023,7 @@ const Produkte: NextPage = () => {
                       />
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {emojiPalette
-                        .filter(e => !emojiSearch || e.includes(emojiSearch))
+                      {filterEmojiBySearch(emojiSearch)
                         .map(e => (
                           <button
                             key={e}
@@ -1785,14 +2038,30 @@ const Produkte: NextPage = () => {
                         ))}
                     </div>
                   </div>
+                    </>
+                  )}
                 </div>
                 
                 <div className="flex gap-2 mt-6">
                   <button
-                    onClick={handleAddNewCategory}
+                    onClick={() => {
+                      if (useExistingCategory) {
+                        if (!selectedExistingCategory) {
+                          alert('❌ Bitte wähle eine Kategorie aus');
+                          return;
+                        }
+                        // Just close the modal - the category already exists
+                        setShowCategoryModal(false);
+                        setSelectedExistingCategory('');
+                        setUseExistingCategory(false);
+                        alert('✅ Kategorie ist bereits vorhanden und kann verwendet werden!');
+                      } else {
+                        handleAddNewCategory();
+                      }
+                    }}
                     className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
                   >
-                    💾 Speichern
+                    {useExistingCategory ? '✅ Auswählen' : '💾 Speichern'}
                   </button>
                   <button
                     onClick={() => {
@@ -1800,6 +2069,9 @@ const Produkte: NextPage = () => {
                       setNewCategoryName('');
                       setNewCategoryEmoji('📂');
                       setEmojiSearch('');
+                      setUseExistingCategory(false);
+                      setSelectedExistingCategory('');
+                      setCategorySearchTerm('');
                     }}
                     className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
                   >
@@ -1836,8 +2108,7 @@ const Produkte: NextPage = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Emoji auswählen:</label>
                     <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto p-2 border border-gray-200 rounded-lg">
-                      {emojiPalette
-                        .filter(e => !categoryEmojiSearch || e.includes(categoryEmojiSearch))
+                      {filterEmojiBySearch(categoryEmojiSearch)
                         .map(e => (
                           <button
                             key={e}

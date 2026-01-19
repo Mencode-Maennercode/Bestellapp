@@ -1,30 +1,33 @@
 {
-  "name": "Karneval Kellner",
+  "name": "Karneval Kellner App",
   "short_name": "Kellner",
-  "description": "Kellner-App für das Karneval Bestellsystem",
-  "start_url": "/kellner",
+  "description": "Kellner-App für das Karneval Bestellsystem - Nur für Servicepersonal",
+  "start_url": "/kellner?source=pwa",
+  "scope": "/kellner/",
   "display": "standalone",
   "background_color": "#009640",
   "theme_color": "#009640",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/waiters.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/waiters.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/waiters.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "categories": ["business", "productivity"],
+  "id": "kellner-app"
 }

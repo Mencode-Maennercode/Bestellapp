@@ -1,12 +1,10 @@
 import { useRouter } from 'next/router';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { database, ref, push, onValue } from '@/lib/firebase';
 import { getTableByCode, isValidTableCode } from '@/lib/dynamicTables';
-import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
+import { menuItems, categories, premiumItems, formatPrice, MenuItem } from '@/lib/menu';
 import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, getContrastTextColor } from '@/lib/settings';
 import { getMenuConfiguration, MenuConfiguration, getCategoryDatabase, getDrinkDatabase, DrinkDatabase } from '@/lib/menuManager';
-import PraesenzWertBanner from '@/components/PraesenzWertBanner';
-import PraesenzWertPopup from '@/components/PraesenzWertPopup';
 
 interface OrderItem {
   name: string;
@@ -78,32 +76,6 @@ export default function TablePage() {
   // Custom categories from database
   const [customCategories, setCustomCategories] = useState<{ id: string; name: string; emoji: string }[]>([]);
   const [categoryOrder, setCategoryOrder] = useState<string[]>([]);
-  
-  // PräsenzWert popup state
-  const [showPraesenzWertPopup, setShowPraesenzWertPopup] = useState(false);
-
-  // Merge default categories with custom categories (DB overrides defaults by id)
-  const mergedCategories = useMemo(() => {
-    const defaultMap: Record<string, { id: string; name: string; emoji: string }> = {};
-    categories.forEach(c => { defaultMap[c.id] = { ...c }; });
-    customCategories.forEach(cc => { defaultMap[cc.id] = { ...defaultMap[cc.id], ...cc }; });
-    const defaultsWithOverrides = categories.map(c => defaultMap[c.id]);
-    const dbOnly = customCategories.filter(cc => !categories.find(c => c.id === cc.id));
-    const all = [...defaultsWithOverrides, ...dbOnly];
-
-    if (!categoryOrder || categoryOrder.length === 0) return all;
-    const orderIndex: Record<string, number> = {};
-    categoryOrder.forEach((id, idx) => { orderIndex[id] = idx; });
-    return [...all].sort((a, b) => {
-      const ai = orderIndex[a.id];
-      const bi = orderIndex[b.id];
-      if (ai === undefined && bi === undefined) return 0;
-      if (ai === undefined) return 1;
-      if (bi === undefined) return -1;
-      return ai - bi;
-    });
-  }, [categories, customCategories, categoryOrder]);
-
   const [pageLoadTime] = useState(() => Date.now()); // Track when page was loaded
   const [broadcastDismissed, setBroadcastDismissed] = useState(false);
   const [lastSeenBroadcastTime, setLastSeenBroadcastTime] = useState<number>(0);
@@ -113,27 +85,6 @@ export default function TablePage() {
     const savedBroadcastTime = localStorage.getItem('lastSeenBroadcastTime');
     if (savedBroadcastTime) {
       setLastSeenBroadcastTime(parseInt(savedBroadcastTime, 10));
-    }
-  }, []);
-
-  // PräsenzWert popup timer - show every 2 hours
-  useEffect(() => {
-    const TWO_HOURS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-    const lastPopupTime = localStorage.getItem('lastPraesenzWertPopup');
-    const now = Date.now();
-    
-    const shouldShowPopup = () => {
-      if (!lastPopupTime) return true;
-      return now - parseInt(lastPopupTime, 10) >= TWO_HOURS;
-    };
-
-    if (shouldShowPopup()) {
-      const timer = setTimeout(() => {
-        setShowPraesenzWertPopup(true);
-        localStorage.setItem('lastPraesenzWertPopup', now.toString());
-      }, TWO_HOURS); // Show after 2 hours on the page
-
-      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -222,7 +173,7 @@ export default function TablePage() {
     const manifest = {
       name: `Karneval ${tableNumber === 999 ? 'Demo Tisch' : `Tisch ${tableNumber}`}`,
       short_name: tableNumber === 999 ? 'Demo' : `T${tableNumber}`,
-      description: 'Tisch-App für das Karneval Bestellsystem - Bestelle Getränke direkt vom Tisch',
+      description: 'Tisch-App f├╝r das Karneval Bestellsystem - Bestelle Getr├ñnke direkt vom Tisch',
       start_url: `/tisch/${code}`,
       scope: `/tisch/${code}`,
       display: 'standalone',
@@ -338,78 +289,75 @@ export default function TablePage() {
   }, []);
 
   // Load menu configuration and build configured items (same as Kellner page)
-  const loadMenuConfig = useCallback(async () => {
-    try {
-      const config = await getMenuConfiguration();
-      setMenuConfig(config);
-      const db = await getDrinkDatabase();
-      setDrinkDatabase(db);
-      
-      // Build configured items with all settings applied
-      if (!config.items) {
-        setConfiguredItems(menuItems);
-        return;
-      }
-      
-      const activeItemIds = new Set(Object.keys(config.items));
-      
-      const applyConfig = (base: MenuItem, itemConfig: any | undefined): MenuItem => {
-        return {
-          ...base,
-          isPopular: itemConfig?.isPopular ?? base.isPopular ?? false,
-          isSoldOut: itemConfig?.isSoldOut ?? base.isSoldOut ?? false,
-          // Apply emoji override from configuration
-          emoji: itemConfig?.emoji ?? base.emoji,
-          askForGlasses: itemConfig?.askForGlasses ?? base.askForGlasses ?? false,
-          glassType: itemConfig?.glassType ?? base.glassType ?? 'beer',
-          tableSection: itemConfig?.tableSection ?? base.tableSection ?? null,
-          name: itemConfig?.name ?? base.name,
-          price: itemConfig?.price ?? base.price,
-          description: itemConfig && 'description' in itemConfig
-            ? itemConfig.description ?? ''
-            : base.description ?? '',
-          size: itemConfig && 'size' in itemConfig
-            ? itemConfig.size
-            : base.size,
-          category: itemConfig?.category ?? base.category,
+  useEffect(() => {
+    const loadMenuConfig = async () => {
+      try {
+        const config = await getMenuConfiguration();
+        setMenuConfig(config);
+        const db = await getDrinkDatabase();
+        setDrinkDatabase(db);
+        
+        // Build configured items with all settings applied
+        if (!config.items) {
+          setConfiguredItems(menuItems);
+          return;
+        }
+        
+        const activeItemIds = new Set(Object.keys(config.items));
+        
+        const applyConfig = (base: MenuItem, itemConfig: any | undefined): MenuItem => {
+          return {
+            ...base,
+            isPopular: itemConfig?.isPopular ?? base.isPopular ?? false,
+            isSoldOut: itemConfig?.isSoldOut ?? base.isSoldOut ?? false,
+            askForGlasses: itemConfig?.askForGlasses ?? base.askForGlasses ?? false,
+            glassType: itemConfig?.glassType ?? base.glassType ?? 'beer',
+            tableSection: itemConfig?.tableSection ?? base.tableSection ?? null,
+            name: itemConfig?.name ?? base.name,
+            price: itemConfig?.price ?? base.price,
+            description: itemConfig && 'description' in itemConfig
+              ? itemConfig.description ?? ''
+              : base.description ?? '',
+            size: itemConfig && 'size' in itemConfig
+              ? itemConfig.size
+              : base.size,
+            category: itemConfig?.category ?? base.category,
+          };
         };
-      };
-      
-      const standardItems = menuItems
-        .filter((item) => activeItemIds.has(item.id))
-        .map((item) => {
-          const itemConfig = config.items[item.id];
-          return applyConfig(item, itemConfig);
-        });
+        
+        const standardItems = menuItems
+          .filter((item) => activeItemIds.has(item.id))
+          .map((item) => {
+            const itemConfig = config.items[item.id];
+            return applyConfig(item, itemConfig);
+          });
 
-      const customItems: MenuItem[] = [];
-      if (db && db.drinks) {
-        for (const [id, itemConfig] of Object.entries(config.items)) {
-          if (menuItems.find(mi => mi.id === id)) continue;
-          const drink = db.drinks[id];
-          if (drink) {
-            const base: MenuItem = {
-              id,
-              name: drink.name,
-              emoji: drink.emoji,
-              price: drink.price,
-              size: drink.size,
-              category: drink.category,
-              description: drink.description,
-            } as any;
-            customItems.push(applyConfig(base, itemConfig as any));
+        const customItems: MenuItem[] = [];
+        if (db && db.drinks) {
+          for (const [id, itemConfig] of Object.entries(config.items)) {
+            if (menuItems.find(mi => mi.id === id)) continue;
+            const drink = db.drinks[id];
+            if (drink) {
+              const base: MenuItem = {
+                id,
+                name: drink.name,
+                emoji: drink.emoji,
+                price: drink.price,
+                size: drink.size,
+                category: drink.category,
+                description: drink.description,
+              } as any;
+              customItems.push(applyConfig(base, itemConfig as any));
+            }
           }
         }
+
+        setConfiguredItems([...standardItems, ...customItems]);
+      } catch (error) {
+        console.error('Failed to load menu config:', error);
+        setConfiguredItems(menuItems);
       }
-
-      setConfiguredItems([...standardItems, ...customItems]);
-    } catch (error) {
-      console.error('Failed to load menu config:', error);
-      setConfiguredItems(menuItems);
-    }
-  }, []);
-
-  useEffect(() => {
+    };
     loadMenuConfig();
     
     // Also subscribe to menu and drink database changes to reload config
@@ -418,29 +366,28 @@ export default function TablePage() {
     const unsubMenu = onValue(menuVersionRef, () => { loadMenuConfig(); });
     const unsubDrinks = onValue(drinkVersionRef, () => { loadMenuConfig(); });
     return () => { unsubMenu(); unsubDrinks(); };
-  }, [loadMenuConfig]);
-
-  // Load custom categories from database
-  const loadCustomCategories = useCallback(async () => {
-    try {
-      const db = await getCategoryDatabase();
-      if (db.categories) {
-        const cats = Object.entries(db.categories).map(([id, cat]: [string, any]) => ({
-          id,
-          name: cat.name,
-          emoji: cat.emoji
-        }));
-        setCustomCategories(cats);
-      }
-      if (db.order && Array.isArray(db.order)) {
-        setCategoryOrder(db.order);
-      }
-    } catch (error) {
-      console.error('Failed to load custom categories:', error);
-    }
   }, []);
 
+  // Load custom categories from database
   useEffect(() => {
+    const loadCustomCategories = async () => {
+      try {
+        const db = await getCategoryDatabase();
+        if (db.categories) {
+          const cats = Object.entries(db.categories).map(([id, cat]: [string, any]) => ({
+            id,
+            name: cat.name,
+            emoji: cat.emoji
+          }));
+          setCustomCategories(cats);
+        }
+        if (db.order && Array.isArray(db.order)) {
+          setCategoryOrder(db.order);
+        }
+      } catch (error) {
+        console.error('Failed to load custom categories:', error);
+      }
+    };
     loadCustomCategories();
     
     // Subscribe to category database changes
@@ -449,7 +396,7 @@ export default function TablePage() {
       loadCustomCategories();
     });
     return () => unsubscribe();
-  }, [loadCustomCategories]);
+  }, []);
 
   // Subscribe to broadcast messages
   useEffect(() => {
@@ -794,11 +741,11 @@ export default function TablePage() {
     return (
       <div className="min-h-screen bg-red-700 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl p-8 text-center max-w-md shadow-2xl">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-red-700 mb-4">System außer Betrieb</h1>
+          <div className="text-6xl mb-4">ÔÜá´©Å</div>
+          <h1 className="text-2xl font-bold text-red-700 mb-4">System au├ƒer Betrieb</h1>
           <p className="text-gray-700 text-lg">
-            Das System wurde aus technischen Gründen abgeschaltet. 
-            Kellner kommen jetzt regelmäßig an Ihren Tisch.
+            Das System wurde aus technischen Gr├╝nden abgeschaltet. 
+            Kellner kommen jetzt regelm├ñ├ƒig an Ihren Tisch.
           </p>
         </div>
       </div>
@@ -858,12 +805,12 @@ export default function TablePage() {
             {/* Success Messages */}
             {orderSent && (
               <div className="bg-white/90 backdrop-blur rounded-xl p-4 mb-4 text-center shadow-lg animate-pulse">
-                <p className="text-evm-green font-bold text-lg">✅ Bestellung gesendet!</p>
+                <p className="text-evm-green font-bold text-lg">Ô£à Bestellung gesendet!</p>
               </div>
             )}
             {waiterCalled && (
               <div className="bg-white/90 backdrop-blur rounded-xl p-4 mb-4 text-center shadow-lg animate-pulse">
-                <p className="text-evm-green font-bold text-lg">✅ Kellner wird gerufen!</p>
+                <p className="text-evm-green font-bold text-lg">Ô£à Kellner wird gerufen!</p>
               </div>
             )}
 
@@ -898,7 +845,7 @@ export default function TablePage() {
                       {t('cooldown_active', settings.language)} {Math.ceil(waiterCooldown / 60)} {t('minutes', settings.language)}
                     </div>
                     <div className="text-xs text-white/80 mt-2">
-                      🙋 Köbes wurde gerufen
+                      ­ƒÖï K├Âbes wurde gerufen
                     </div>
                   </div>
                 )}
@@ -916,13 +863,13 @@ export default function TablePage() {
                     <div key={idx} className="border-2 border-evm-green rounded-xl p-3 bg-green-50">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-gray-600">{formatTime(order.timestamp)}</span>
-                        <span className="text-lg font-bold text-evm-green">{order.total.toFixed(2)} €</span>
+                        <span className="text-lg font-bold text-evm-green">{order.total.toFixed(2)} Ôé¼</span>
                       </div>
                       <div className="space-y-1">
                         {order.items.map((item, itemIdx) => (
                           <div key={itemIdx} className="flex justify-between text-gray-700">
                             <span>{item.quantity}x {item.name}</span>
-                            <span>{(item.price * item.quantity).toFixed(2)} €</span>
+                            <span>{(item.price * item.quantity).toFixed(2)} Ôé¼</span>
                           </div>
                         ))}
                       </div>
@@ -935,7 +882,7 @@ export default function TablePage() {
               </div>
             )}
 
-            {/* Cart Summary - Moved to top (under Köbes Rufen) */}
+            {/* Cart Summary - Moved to top (under K├Âbes Rufen) */}
             {!isOrderFormDisabled && cartItemCount > 0 && (
               <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl mb-4 p-4">
                 <div className="flex justify-between items-center mb-3">
@@ -958,13 +905,13 @@ export default function TablePage() {
                     color: getContrastTextColor(settings.colors.secondaryTisch)
                   }}
                 >
-                  🛒 Bestellen ({formatPrice(cartTotal)})
+                  ­ƒøÆ Bestellen ({formatPrice(cartTotal)})
                 </button>
                 <button
                   onClick={handleClearCart}
                   className="w-full mt-2 py-2 rounded-lg text-sm font-bold bg-gray-200 text-gray-600"
                 >
-                  🔄 Warenkorb leeren
+                  ­ƒöä Warenkorb leeren
                 </button>
               </div>
             )}
@@ -980,24 +927,50 @@ export default function TablePage() {
                   activeCategory === 'alle' ? 'bg-evm-green text-white' : 'bg-white text-gray-700'
                 }`}
               >
-                🍹 Alle
+                ­ƒì╣ Alle
               </button>
               {/* Merged and ordered categories */}
-              {mergedCategories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
-                    activeCategory === cat.id ? 'bg-evm-green text-white' : 'bg-white text-gray-700'
-                  }`}
-                >
-                  {cat.emoji} {cat.name}
-                </button>
-              ))}
+              {(() => {
+                const allCats = [...categories, ...customCategories];
+                if (!categoryOrder || categoryOrder.length === 0) {
+                  return allCats.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
+                        activeCategory === cat.id ? 'bg-evm-green text-white' : 'bg-white text-gray-700'
+                      }`}
+                    >
+                      {cat.emoji} {cat.name}
+                    </button>
+                  ));
+                }
+                const orderIndex: Record<string, number> = {};
+                categoryOrder.forEach((id, idx) => { orderIndex[id] = idx; });
+                const sorted = [...allCats].sort((a, b) => {
+                  const ai = orderIndex[a.id];
+                  const bi = orderIndex[b.id];
+                  if (ai === undefined && bi === undefined) return 0;
+                  if (ai === undefined) return 1;
+                  if (bi === undefined) return -1;
+                  return ai - bi;
+                });
+                return sorted.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
+                      activeCategory === cat.id ? 'bg-evm-green text-white' : 'bg-white text-gray-700'
+                    }`}
+                  >
+                    {cat.emoji} {cat.name}
+                  </button>
+                ));
+              })()}
             </div>
 
             <div className="p-4">
-              {/* Premium Items - "Für den Tisch" Section - Dynamic based on tableSection */}
+              {/* Premium Items - "F├╝r den Tisch" Section - Dynamic based on tableSection */}
               {activeCategory === 'alle' && (() => {
                 // Use configuredItems which already have all settings applied
                 const bottleNonalcItems = configuredItems.filter(i => i.tableSection === 'bottle-nonalc');
@@ -1013,7 +986,7 @@ export default function TablePage() {
                 return (
                   <div className="mb-6">
                     <h3 className="text-sm font-bold text-amber-700 mb-2 flex items-center gap-2">
-                      <span className="text-lg">✨</span> Für den ganzen Tisch
+                      <span className="text-lg">Ô£¿</span> F├╝r den ganzen Tisch
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {bottleNonalcItems.length > 0 && (
@@ -1022,7 +995,7 @@ export default function TablePage() {
                           className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-3 text-left hover:shadow-md transition-shadow"
                         >
                           <div className="flex justify-between items-start mb-1">
-                            <span className="text-2xl">🍾</span>
+                            <span className="text-2xl">­ƒì¥</span>
                             <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                               ab {formatPrice(Math.min(...bottleNonalcItems.map(i => i.price)))}
                             </span>
@@ -1038,7 +1011,7 @@ export default function TablePage() {
                           className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-3 text-left hover:shadow-md transition-shadow"
                         >
                           <div className="flex justify-between items-start mb-1">
-                            <span className="text-2xl">📦</span>
+                            <span className="text-2xl">­ƒôª</span>
                             <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                               ab {formatPrice(Math.min(...beerCrateItems.map(i => i.price)))}
                             </span>
@@ -1054,7 +1027,7 @@ export default function TablePage() {
                           className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-3 text-left hover:shadow-md transition-shadow"
                         >
                           <div className="flex justify-between items-start mb-1">
-                            <span className="text-2xl">🍾</span>
+                            <span className="text-2xl">­ƒì¥</span>
                             <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                               ab {formatPrice(Math.min(...wineBottleItems.map(i => i.price)))}
                             </span>
@@ -1070,7 +1043,7 @@ export default function TablePage() {
                           className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-3 text-left hover:shadow-md transition-shadow"
                         >
                           <div className="flex justify-between items-start mb-1">
-                            <span className="text-2xl">🥃</span>
+                            <span className="text-2xl">­ƒÑâ</span>
                             <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                               ab {formatPrice(Math.min(...shotsCrateItems.map(i => i.price)))}
                             </span>
@@ -1086,7 +1059,7 @@ export default function TablePage() {
 
               {/* Regular Items */}
               <h3 className="text-sm font-bold text-gray-600 mb-2">
-                {activeCategory === 'alle' ? '🥤 Getränke' : mergedCategories.find(c => c.id === activeCategory)?.emoji + ' ' + mergedCategories.find(c => c.id === activeCategory)?.name}
+                {activeCategory === 'alle' ? '­ƒÑñ Getr├ñnke' : categories.find(c => c.id === activeCategory)?.emoji + ' ' + categories.find(c => c.id === activeCategory)?.name}
               </h3>
               <div className="space-y-2 max-h-[40vh] overflow-y-auto">
                 {getFilteredItems().map(item => (
@@ -1101,14 +1074,14 @@ export default function TablePage() {
                       <div>
                         <p className="font-bold text-gray-800">
                           {item.name}
-                          {item.isPopular && <span className="ml-2 text-xs text-green-600">⭐ Beliebt</span>}
+                          {item.isPopular && <span className="ml-2 text-xs text-green-600">Ô¡É Beliebt</span>}
                           {item.isSoldOut && <span className="ml-2 text-xs font-bold text-white bg-red-500 px-2 py-0.5 rounded-full">AUSVERKAUFT</span>}
                         </p>
                         {item.description && (
                           <p className="text-xs text-gray-500">{item.description}</p>
                         )}
                         <p className="text-sm text-gray-500">
-                          {item.size && <span>{item.size} · </span>}
+                          {item.size && <span>{item.size} ┬À </span>}
                           <span className="font-semibold text-evm-green">{formatPrice(item.price)}</span>
                         </p>
                       </div>
@@ -1145,9 +1118,9 @@ export default function TablePage() {
           </div>
         ) : (
           <div className="bg-yellow-100/90 backdrop-blur rounded-2xl p-6 shadow-xl mb-4 text-center">
-            <div className="text-4xl mb-3">🚫</div>
-            <h2 className="text-xl font-bold text-yellow-800 mb-2">Bestellung momentan nicht möglich</h2>
-            <p className="text-yellow-700">Bitte rufen Sie den Köbes über den Button oben.</p>
+            <div className="text-4xl mb-3">­ƒÜ½</div>
+            <h2 className="text-xl font-bold text-yellow-800 mb-2">Bestellung momentan nicht m├Âglich</h2>
+            <p className="text-yellow-700">Bitte rufen Sie den K├Âbes ├╝ber den Button oben.</p>
           </div>
         )}
 
@@ -1162,7 +1135,7 @@ export default function TablePage() {
             className="w-full bg-white/90 backdrop-blur py-4 rounded-2xl text-lg font-bold shadow-xl active:scale-95 transition-transform mt-4 flex items-center justify-center gap-2"
             style={{ color: settings.colors.secondaryTisch }}
           >
-            <span className="text-2xl">📲</span>
+            <span className="text-2xl">­ƒô▓</span>
             <span>Tisch {tableNumber} als App speichern</span>
           </button>
         )}
@@ -1173,8 +1146,8 @@ export default function TablePage() {
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">🍾 Flasche wählen</h2>
-                <button onClick={() => { setShowBottleSelection(false); setTempQuantity({}); }} className="text-2xl text-gray-500">✕</button>
+                <h2 className="text-xl font-bold text-gray-800">­ƒì¥ Flasche w├ñhlen</h2>
+                <button onClick={() => { setShowBottleSelection(false); setTempQuantity({}); }} className="text-2xl text-gray-500">Ô£ò</button>
               </div>
               <div className="space-y-3 mb-4">
                 {configuredItems.filter(i => i.tableSection === 'bottle-nonalc').map(item => (
@@ -1236,7 +1209,7 @@ export default function TablePage() {
                     color: getContrastTextColor(settings.colors.secondaryTisch)
                   }}
                 >
-                  Hinzufügen
+                  Hinzuf├╝gen
                 </button>
               )}
             </div>
@@ -1248,8 +1221,8 @@ export default function TablePage() {
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">📦 Kiste wählen</h2>
-                <button onClick={() => { setShowBeerCrateSelection(false); setTempQuantity({}); }} className="text-2xl text-gray-500">✕</button>
+                <h2 className="text-xl font-bold text-gray-800">­ƒôª Kiste w├ñhlen</h2>
+                <button onClick={() => { setShowBeerCrateSelection(false); setTempQuantity({}); }} className="text-2xl text-gray-500">Ô£ò</button>
               </div>
               <div className="space-y-3 mb-4">
                 {configuredItems.filter(i => i.tableSection === 'beer-crate').map(item => (
@@ -1310,7 +1283,7 @@ export default function TablePage() {
                     color: getContrastTextColor(settings.colors.secondaryTisch)
                   }}
                 >
-                  Hinzufügen
+                  Hinzuf├╝gen
                 </button>
               )}
             </div>
@@ -1322,8 +1295,8 @@ export default function TablePage() {
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">🍾 Wein/Sekt wählen</h2>
-                <button onClick={() => { setShowWineBottleSelection(false); setTempQuantity({}); }} className="text-2xl text-gray-500">✕</button>
+                <h2 className="text-xl font-bold text-gray-800">­ƒì¥ Wein/Sekt w├ñhlen</h2>
+                <button onClick={() => { setShowWineBottleSelection(false); setTempQuantity({}); }} className="text-2xl text-gray-500">Ô£ò</button>
               </div>
               <div className="space-y-3 mb-4">
                 {configuredItems.filter(i => i.tableSection === 'wine-bottle').map(item => (
@@ -1384,7 +1357,7 @@ export default function TablePage() {
                     color: getContrastTextColor(settings.colors.secondaryTisch)
                   }}
                 >
-                  Hinzufügen
+                  Hinzuf├╝gen
                 </button>
               )}
             </div>
@@ -1396,8 +1369,8 @@ export default function TablePage() {
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">🥃 Schnaps wählen</h2>
-                <button onClick={() => { setShowShotSelection(false); setTempQuantity({}); }} className="text-2xl text-gray-500">✕</button>
+                <h2 className="text-xl font-bold text-gray-800">­ƒÑâ Schnaps w├ñhlen</h2>
+                <button onClick={() => { setShowShotSelection(false); setTempQuantity({}); }} className="text-2xl text-gray-500">Ô£ò</button>
               </div>
               <div className="space-y-3 mb-4">
                 {configuredItems.filter(i => i.tableSection === 'shots-crate').map(item => (
@@ -1458,7 +1431,7 @@ export default function TablePage() {
                     color: getContrastTextColor(settings.colors.secondaryTisch)
                   }}
                 >
-                  Hinzufügen
+                  Hinzuf├╝gen
                 </button>
               )}
             </div>
@@ -1473,7 +1446,7 @@ export default function TablePage() {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">🥃 Gläser dazu?</h2>
+              <h2 className="text-xl font-bold text-gray-800">­ƒÑâ Gl├ñser dazu?</h2>
               <button 
                 onClick={() => {
                   setShowGlassModal(false);
@@ -1482,7 +1455,7 @@ export default function TablePage() {
                 }} 
                 className="text-2xl text-gray-500"
               >
-                ✕
+                Ô£ò
               </button>
             </div>
             
@@ -1497,7 +1470,7 @@ export default function TablePage() {
             </div>
             
             <p className="text-gray-600 text-sm mb-4">
-              Wie viele {pendingBottleItem.glassType === 'wine' ? 'Weingläser' : 'Gläser'} benötigen Sie?
+              Wie viele {pendingBottleItem.glassType === 'wine' ? 'Weingl├ñser' : 'Gl├ñser'} ben├Âtigen Sie?
             </p>
             
             <div className="flex items-center justify-center gap-4 mb-6">
@@ -1509,7 +1482,7 @@ export default function TablePage() {
               </button>
               <div className="text-center">
                 <span className="text-4xl font-bold text-evm-green">{glassQuantity}</span>
-                <p className="text-sm text-gray-500">{pendingBottleItem.glassType === 'wine' ? 'Weingläser' : 'Gläser'}</p>
+                <p className="text-sm text-gray-500">{pendingBottleItem.glassType === 'wine' ? 'Weingl├ñser' : 'Gl├ñser'}</p>
               </div>
               <button
                 onClick={() => setGlassQuantity(glassQuantity + 1)}
@@ -1530,13 +1503,13 @@ export default function TablePage() {
                 }}
                 className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold"
               >
-                Ohne Gläser
+                Ohne Gl├ñser
               </button>
               <button
                 onClick={addBottleWithGlasses}
                 className="flex-1 py-3 bg-evm-green text-white rounded-xl font-bold"
               >
-                {glassQuantity > 0 ? `Mit ${glassQuantity} Gläsern` : 'Hinzufügen'}
+                {glassQuantity > 0 ? `Mit ${glassQuantity} Gl├ñsern` : 'Hinzuf├╝gen'}
               </button>
             </div>
           </div>
@@ -1547,27 +1520,27 @@ export default function TablePage() {
       {showIOSInstallHint && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowIOSInstallHint(false)}>
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="text-5xl mb-4">🍺</div>
+            <div className="text-5xl mb-4">­ƒì║</div>
             <h2 className="text-xl font-bold text-gray-800 mb-4">{tableNumber === 999 ? 'Demo' : `Tisch ${tableNumber}`} App installieren</h2>
             <p className="text-sm text-gray-600 mb-4">
               Installiere diese Seite als App auf deinem Handy - so findest du sie immer schnell wieder!
             </p>
             <div className="text-left space-y-3 mb-6">
               <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-xl">
-                <span className="text-2xl">1️⃣</span>
+                <span className="text-2xl">1´©ÅÔâú</span>
                 <span className="text-gray-700">Tippe unten auf <strong>Teilen</strong> (das Quadrat mit Pfeil)</span>
               </div>
               <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-xl">
-                <span className="text-2xl">2️⃣</span>
+                <span className="text-2xl">2´©ÅÔâú</span>
                 <span className="text-gray-700">Scrolle und tippe auf <strong>"Zum Home-Bildschirm"</strong></span>
               </div>
               <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-xl">
-                <span className="text-2xl">3️⃣</span>
-                <span className="text-gray-700">Tippe oben rechts auf <strong>"Hinzufügen"</strong></span>
+                <span className="text-2xl">3´©ÅÔâú</span>
+                <span className="text-gray-700">Tippe oben rechts auf <strong>"Hinzuf├╝gen"</strong></span>
               </div>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              Die App öffnet immer direkt {tableNumber === 999 ? 'den Demo Tisch' : `Tisch ${tableNumber}`}!
+              Die App ├Âffnet immer direkt {tableNumber === 999 ? 'den Demo Tisch' : `Tisch ${tableNumber}`}!
             </p>
             <button
               onClick={() => setShowIOSInstallHint(false)}
@@ -1584,7 +1557,7 @@ export default function TablePage() {
         <div className="fixed top-20 left-4 right-4 z-40">
           <div className="max-w-lg mx-auto bg-blue-600 text-white p-4 rounded-xl shadow-2xl animate-pulse">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">📢</span>
+              <span className="text-2xl">­ƒôó</span>
               <div className="flex-1">
                 <p className="font-bold">{broadcast.message}</p>
               </div>
@@ -1616,7 +1589,7 @@ export default function TablePage() {
                   onClick={() => setShowCart(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  ✕
+                  Ô£ò
                 </button>
               </div>
             </div>
@@ -1636,7 +1609,7 @@ export default function TablePage() {
                           <span className="text-2xl">{item.emoji}</span>
                           <div>
                             <h3 className="font-bold text-gray-800">{item.name}</h3>
-                            <p className="text-sm text-gray-500">{formatPrice(item.price)} × {quantity}</p>
+                            <p className="text-sm text-gray-500">{formatPrice(item.price)} ├ù {quantity}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1645,7 +1618,7 @@ export default function TablePage() {
                             onClick={() => removeFromCart(itemId)}
                             className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                           >
-                            🗑️
+                            ­ƒùæ´©Å
                           </button>
                         </div>
                       </div>
@@ -1669,13 +1642,13 @@ export default function TablePage() {
                     }}
                     className="flex-1 py-3 bg-evm-green text-white rounded-xl font-bold active:scale-95 transition-all"
                   >
-                    🛒 Bestellen ({formatPrice(cartTotal)})
+                    ­ƒøÆ Bestellen ({formatPrice(cartTotal)})
                   </button>
                   <button
                     onClick={handleClearCart}
                     className="px-4 py-3 bg-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-300 transition-colors"
                   >
-                    🔄
+                    ­ƒöä
                   </button>
                 </div>
               </div>
@@ -1683,14 +1656,6 @@ export default function TablePage() {
           </div>
         </div>
       )}
-
-      {/* PräsenzWert Popup */}
-      {showPraesenzWertPopup && (
-        <PraesenzWertPopup onClose={() => setShowPraesenzWertPopup(false)} />
-      )}
-
-      {/* PräsenzWert Banner - Always visible at bottom */}
-      <PraesenzWertBanner />
     </div>
   );
 }
