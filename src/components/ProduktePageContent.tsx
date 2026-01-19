@@ -206,13 +206,19 @@ const Produkte: NextPage = () => {
       try {
         const db = await getCategoryDatabase();
         if (db.categories) {
-          const cats = Object.entries(db.categories).map(([id, cat]: [string, any]) => ({
+          const allCats = Object.entries(db.categories).map(([id, cat]: [string, any]) => ({
             id,
             name: cat.name,
-            emoji: cat.emoji
+            emoji: cat.emoji,
+            isActive: cat.isActive !== false // Default to true if not set
           }));
-          setExtraCategories(cats);
-          setAllDatabaseCategories(cats); // Store ALL categories from database for selection
+          
+          // For active display, only show active categories
+          const activeCats = allCats.filter(cat => cat.isActive);
+          setExtraCategories(activeCats);
+          
+          // For "Bestehende wählen", show ALL categories (including deleted ones)
+          setAllDatabaseCategories(allCats);
         }
         if (db.order && Array.isArray(db.order)) {
           setCategoryOrder(db.order);
@@ -882,13 +888,15 @@ const Produkte: NextPage = () => {
       // Reload categories
       const db = await getCategoryDatabase();
       if (db.categories) {
-        const cats = Object.entries(db.categories).map(([id, cat]: [string, any]) => ({
+        const allCats = Object.entries(db.categories).map(([id, cat]: [string, any]) => ({
           id,
           name: cat.name,
-          emoji: cat.emoji
+          emoji: cat.emoji,
+          isActive: cat.isActive !== false
         }));
-        setExtraCategories(cats);
-        setAllDatabaseCategories(cats); // Update all database categories
+        const activeCats = allCats.filter(cat => cat.isActive);
+        setExtraCategories(activeCats);
+        setAllDatabaseCategories(allCats); // Update all database categories
       }
       
       // Reset form and close modal
@@ -915,13 +923,15 @@ const Produkte: NextPage = () => {
       // Reload categories
       const db = await getCategoryDatabase();
       if (db.categories) {
-        const cats = Object.entries(db.categories).map(([id, cat]: [string, any]) => ({
+        const allCats = Object.entries(db.categories).map(([id, cat]: [string, any]) => ({
           id,
           name: cat.name,
-          emoji: cat.emoji
+          emoji: cat.emoji,
+          isActive: cat.isActive !== false
         }));
-        setExtraCategories(cats);
-        setAllDatabaseCategories(cats); // Update all database categories
+        const activeCats = allCats.filter(cat => cat.isActive);
+        setExtraCategories(activeCats);
+        setAllDatabaseCategories(allCats); // Update all database categories
       } else {
         setExtraCategories([]);
         setAllDatabaseCategories([]);

@@ -116,26 +116,36 @@ export default function TablePage() {
     }
   }, []);
 
-  // PräsenzWert popup timer - show every 2 hours
+  // PräsenzWert popup timer - show on every refresh for demo table, every 2 hours for real tables
   useEffect(() => {
+    const isDemoTable = code === 'DEMO123';
     const TWO_HOURS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
     const lastPopupTime = localStorage.getItem('lastPraesenzWertPopup');
     const now = Date.now();
     
-    const shouldShowPopup = () => {
-      if (!lastPopupTime) return true;
-      return now - parseInt(lastPopupTime, 10) >= TWO_HOURS;
-    };
-
-    if (shouldShowPopup()) {
+    if (isDemoTable) {
+      // For demo table: show immediately on every page load
       const timer = setTimeout(() => {
         setShowPraesenzWertPopup(true);
-        localStorage.setItem('lastPraesenzWertPopup', now.toString());
-      }, TWO_HOURS); // Show after 2 hours on the page
-
+      }, 1000); // Show after 1 second
       return () => clearTimeout(timer);
+    } else {
+      // For real tables: show every 2 hours
+      const shouldShowPopup = () => {
+        if (!lastPopupTime) return true;
+        return now - parseInt(lastPopupTime, 10) >= TWO_HOURS;
+      };
+
+      if (shouldShowPopup()) {
+        const timer = setTimeout(() => {
+          setShowPraesenzWertPopup(true);
+          localStorage.setItem('lastPraesenzWertPopup', now.toString());
+        }, TWO_HOURS); // Show after 2 hours on the page
+
+        return () => clearTimeout(timer);
+      }
     }
-  }, []);
+  }, [code]);
 
   useEffect(() => {
     const loadTable = async () => {
@@ -810,6 +820,9 @@ export default function TablePage() {
       className="min-h-screen relative overflow-hidden"
       style={{ background: `linear-gradient(135deg, ${settings.colors.primaryTisch} 0%, ${settings.colors.primaryTisch}dd 100%)` }}
     >
+      {/* PräsenzWert Banner - Above Header */}
+      <PraesenzWertBanner />
+
       {/* Background Logo Watermark */}
       <div className="pointer-events-none absolute top-6 right-[-4%] opacity-10 rotate-12">
         <img
@@ -1688,9 +1701,6 @@ export default function TablePage() {
       {showPraesenzWertPopup && (
         <PraesenzWertPopup onClose={() => setShowPraesenzWertPopup(false)} />
       )}
-
-      {/* PräsenzWert Banner - Always visible at bottom */}
-      <PraesenzWertBanner />
     </div>
   );
 }

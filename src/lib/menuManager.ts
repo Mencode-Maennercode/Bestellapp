@@ -55,6 +55,8 @@ export interface CategoryDatabase {
       description?: string;
       isCustom?: boolean;
       addedAt?: number;
+      isActive?: boolean; // Track if category is active or deleted
+      deletedAt?: number; // When category was marked as deleted
     };
   };
   // Optional ordering for categories (array of category IDs)
@@ -385,7 +387,8 @@ export const addCategoryToDatabase = async (category: {
     name: category.name,
     emoji: category.emoji,
     isCustom: category.isCustom ?? true,
-    addedAt: Date.now()
+    addedAt: Date.now(),
+    isActive: true // Mark as active by default
   };
 
   if (category.description) {
@@ -404,12 +407,17 @@ export const addCategoryToDatabase = async (category: {
   return id;
 };
 
-// Delete category from database
+// Delete category from database (marks as inactive instead of truly deleting)
 export const deleteCategoryFromDatabase = async (categoryId: string): Promise<void> => {
   const db = await getCategoryDatabase();
   
   if (db.categories && db.categories[categoryId]) {
-    delete db.categories[categoryId];
+    // Mark as inactive instead of deleting, so it still appears in "Bestehende wählen"
+    db.categories[categoryId] = {
+      ...db.categories[categoryId],
+      isActive: false,
+      deletedAt: Date.now()
+    };
     await updateCategoryDatabase({ categories: db.categories });
   }
 };
