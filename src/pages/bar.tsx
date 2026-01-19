@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { database, ref, onValue, remove, set, get } from '@/lib/firebase';
 import { getTableNumber } from '@/lib/tables';
 import QRCode from 'qrcode';
@@ -7,9 +7,8 @@ import SystemPrepModal from '@/components/SystemPrepModal';
 import SlidePanel from '@/components/SlidePanel';
 import SettingsPanel from '@/components/SettingsPanel';
 import StatisticsPanel from '@/components/StatisticsPanel';
-import TablesManagementPanel from '@/components/TablesManagementPanel';
 import BroadcastPanel from '@/components/BroadcastPanel';
-import { AppSettings, defaultSettings, subscribeToSettings, getWaitersForTable, WaiterAssignment, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead } from '@/lib/settings';
+import { AppSettings, defaultSettings, subscribeToSettings, getWaitersForTable, WaiterAssignment, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, verifyAdminPin } from '@/lib/settings';
 
 interface Order {
   id: string;
@@ -84,10 +83,22 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
   const [waiterAssignments, setWaiterAssignments] = useState<WaiterAssignment[]>([]);
   const [selectedThekeId, setSelectedThekeId] = useState<string | null>(null);
   
-  // PIN Modal State
-  const [showPinModal, setShowPinModal] = useState<'emergency' | 'orderForm' | null>(null);
+  // PIN Modal State (generalized)
+  // Keep showPinModal values identical to settings.pinProtection keys
+  const [showPinModal, setShowPinModal] = useState<
+    | 'systemShutdown'
+    | 'orderFormToggle'
+    | 'productsPage'
+    | 'settings'
+    | 'broadcast'
+    | 'tableManagement'
+    | 'statistics'
+    | null
+  >(null);
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState(false);
+  const [pinVisible, setPinVisible] = useState(false);
+  const pendingActionRef = useRef<null | (() => Promise<void> | void)>(null);
   const [showTablePlan, setShowTablePlan] = useState(false);
   const [broadcast, setBroadcast] = useState<BroadcastMessage | null>(null);
   const [broadcastDismissed, setBroadcastDismissed] = useState(false);
@@ -103,7 +114,6 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [showProductsPanel, setShowProductsPanel] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
-  const [showQRCodesPanel, setShowQRCodesPanel] = useState(false);
   const [showBroadcastPanel, setShowBroadcastPanel] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetPin, setResetPin] = useState('');
@@ -136,7 +146,9 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
           ...order,
         }));
         // Filter out expired orders based on auto-hide setting
-        const autoHideMinutes = settings.orderAutoHideMinutes ?? 6;
+        // Respect settings: 0 = never auto-hide, otherwise enforce minimum 5 minutes
+        const rawAutoHide = settings.orderAutoHideMinutes ?? 6;
+        const autoHideMinutes = rawAutoHide === 0 ? 0 : Math.max(rawAutoHide, 5);
         const filteredOrders = orderList.filter(order => 
           getAlertPhase(order.timestamp, autoHideMinutes) !== 'expired'
         );
@@ -366,32 +378,49 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
     await handleBarRemoveCompletely(orderId);
   };
 
-  const handleEmergencyToggle = () => {
-    setShowPinModal('emergency');
-    setPin('');
-    setPinError(false);
+  const isProtected = (key: keyof NonNullable<AppSettings['pinProtection']>['protectedActions']): boolean => {
+    return settings.pinProtection?.protectedActions?.[key] === true;
   };
 
-  const handleOrderFormToggle = () => {
-    setShowPinModal('orderForm');
-    setPin('');
-    setPinError(false);
-  };
-
-  const handlePinConfirm = async () => {
-    if (pin === '1234') {
-      if (showPinModal === 'emergency') {
-        await set(ref(database, 'system/shutdown'), !isShutdown);
-      } else if (showPinModal === 'orderForm') {
-        await set(ref(database, 'system/orderFormDisabled'), !isOrderFormDisabled);
-      }
-      setShowPinModal(null);
+  const requestPinIfNeeded = (
+    key: keyof NonNullable<AppSettings['pinProtection']>['protectedActions'],
+    action: () => Promise<void> | void
+  ) => {
+    if (isProtected(key)) {
+      pendingActionRef.current = action;
+      setShowPinModal(key as any);
       setPin('');
       setPinError(false);
     } else {
+      action();
+    }
+  };
+
+  const handleEmergencyToggle = () => {
+    requestPinIfNeeded('systemShutdown', async () => {
+      await set(ref(database, 'system/shutdown'), !isShutdown);
+    });
+  };
+
+  const handleOrderFormToggle = () => {
+    requestPinIfNeeded('orderFormToggle', async () => {
+      await set(ref(database, 'system/orderFormDisabled'), !isOrderFormDisabled);
+    });
+  };
+
+  const handlePinConfirm = async () => {
+    const ok = await verifyAdminPin(pin);
+    if (!ok) {
       setPinError(true);
       setTimeout(() => setPinError(false), 2000);
+      return;
     }
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    setShowPinModal(null);
+    setPin('');
+    setPinError(false);
+    if (action) await action();
   };
 
   // Trigger menu refresh on all client devices
@@ -400,10 +429,8 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
   };
 
   const handleResetStatistics = async () => {
-    if (resetPin !== '1234') {
-      alert('Falscher PIN!');
-      return;
-    }
+    const ok = await verifyAdminPin(resetPin);
+    if (!ok) { alert('Falscher PIN!'); return; }
 
     setResetting(true);
     try {
@@ -501,7 +528,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                 </button>
               )}
               <button
-                onClick={() => setShowStatistics(true)}
+                onClick={() => requestPinIfNeeded('statistics', () => setShowStatistics(true))}
                 className="px-6 py-3 rounded-xl font-bold text-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all flex items-center gap-2"
               >
                 📊 Statistik
@@ -510,7 +537,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                 onClick={handleShowWaiterQR}
                 className="px-6 py-3 rounded-xl font-bold text-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all flex items-center gap-2"
               >
-                👤 QR-Kellner
+                👤 Kellner
               </button>
               <div className="ml-4">
                 <AdminMenu
@@ -521,10 +548,10 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                   onMenuRefresh={handleMenuRefresh}
                   onShowWaiterQR={handleShowWaiterQR}
                   onShowSystemPrep={() => setShowSystemPrep(true)}
-                  onShowSettings={() => setShowSettingsPanel(true)}
-                  onShowProducts={() => setShowProductsPanel(true)}
-                  onShowQRCodes={() => setShowQRCodesPanel(true)}
-                  onShowBroadcast={() => setShowBroadcastPanel(true)}
+                  onShowSettings={() => requestPinIfNeeded('settings', () => setShowSettingsPanel(true))}
+                  onShowProducts={() => requestPinIfNeeded('productsPage', () => setShowProductsPanel(true))}
+                  onShowBroadcast={() => requestPinIfNeeded('broadcast', () => setShowBroadcastPanel(true))}
+                  protectedFlags={settings.pinProtection?.protectedActions}
                 />
               </div>
             </div>
@@ -951,14 +978,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
         <StatisticsPanel statistics={statistics} onResetClick={() => setShowResetModal(true)} />
       </SlidePanel>
 
-      <SlidePanel
-        isOpen={showQRCodesPanel}
-        onClose={() => setShowQRCodesPanel(false)}
-        title="🪑 Tische verwalten"
-        width="lg"
-      >
-        <TablesManagementPanel />
-      </SlidePanel>
+      {/* Tische verwalten: jetzt unter Einstellungen im Tab "Tische verwalten" */}
 
       {/* Full-Screen Products Panel with slide-in animation */}
       <div 
@@ -1049,35 +1069,48 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
           <div className="bg-white rounded-2xl p-8 max-w-md w-full text-gray-900 shadow-2xl">
             <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-3xl mx-auto mb-4">
-                {showPinModal === 'emergency' 
-                  ? (isShutdown ? '🔓' : '🚨')
-                  : (isOrderFormDisabled ? '🛒' : '🚫')
-                }
+                {{
+                  systemShutdown: isShutdown ? '🔓' : '🚨',
+                  orderFormToggle: isOrderFormDisabled ? '🛒' : '🚫',
+                  productsPage: '🍺',
+                  settings: '⚙️',
+                  broadcast: '📢',
+                  tableManagement: '🪑',
+                  statistics: '📊'
+                }[showPinModal as Exclude<typeof showPinModal, null>]}
               </div>
               <h2 className="text-2xl font-bold mb-2">
-                {showPinModal === 'emergency' 
-                  ? (isShutdown ? 'System aktivieren' : 'Notfall-Abschaltung')
-                  : (isOrderFormDisabled ? 'Bestellungen aktivieren' : 'Bestellungen sperren')
-                }
+                {{
+                  systemShutdown: isShutdown ? 'System aktivieren' : 'Notfall-Abschaltung',
+                  orderFormToggle: isOrderFormDisabled ? 'Bestellungen aktivieren' : 'Bestellungen sperren',
+                  productsPage: 'Produkte & Preise öffnen',
+                  settings: 'Einstellungen öffnen',
+                  broadcast: 'Nachricht senden öffnen',
+                  tableManagement: 'Tische verwalten öffnen',
+                  statistics: 'Statistik öffnen'
+                }[showPinModal as Exclude<typeof showPinModal, null>]}
               </h2>
               <p className="text-gray-600 text-sm">
-                {showPinModal === 'emergency'
-                  ? (isShutdown 
-                    ? 'Gib den PIN ein um das System wieder zu aktivieren'
-                    : 'Bitte PIN eingeben um das Bestellsystem abzuschalten. Gäste sehen dann eine Hinweis-Meldung.'
-                  )
-                  : (isOrderFormDisabled
-                    ? 'Gib den PIN ein um das Bestellformular für alle Tische wieder zu aktivieren.'
-                    : 'Gib den PIN ein um das Bestellformular für alle Tische zu sperren. Der "Köbes komm ran" Button bleibt sichtbar!'
-                  )
-                }
+                {{
+                  systemShutdown: isShutdown
+                    ? 'Gib den PIN ein, um das System wieder zu aktivieren.'
+                    : 'Gib den PIN ein, um das Bestellsystem abzuschalten. Gäste sehen dann eine Hinweis-Meldung.',
+                  orderFormToggle: isOrderFormDisabled
+                    ? 'Gib den PIN ein, um das Bestellformular für alle Tische wieder zu aktivieren.'
+                    : 'Gib den PIN ein, um das Bestellformular für alle Tische zu sperren. Der "Köbes komm ran" Button bleibt sichtbar!',
+                  productsPage: 'Bitte Admin-PIN eingeben, um Produkte & Preise zu öffnen.',
+                  settings: 'Bitte Admin-PIN eingeben, um die Einstellungen zu öffnen.',
+                  broadcast: 'Bitte Admin-PIN eingeben, um die Broadcast-Funktion zu öffnen.',
+                  tableManagement: 'Bitte Admin-PIN eingeben, um Tische/QR-Verwaltung zu öffnen.',
+                  statistics: 'Bitte Admin-PIN eingeben, um Statistiken zu öffnen.'
+                }[showPinModal as Exclude<typeof showPinModal, null>]}
               </p>
             </div>
             
             <div className="mb-6">
               <div className="relative">
                 <input
-                  type="password"
+                  type={pinVisible ? 'text' : 'password'}
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={pin}
@@ -1095,6 +1128,14 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handlePinConfirm()}
                 />
+                <button
+                  type="button"
+                  onClick={() => setPinVisible(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label={pinVisible ? 'PIN verbergen' : 'PIN anzeigen'}
+                >
+                  {pinVisible ? '🙈' : '👁️'}
+                </button>
                 {pinError && (
                   <div className="absolute -top-6 left-0 right-0 text-center">
                     <span className="text-red-500 text-sm font-medium">❌ Falscher PIN!</span>
@@ -1134,16 +1175,26 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                 className={`flex-1 px-6 py-4 text-white rounded-xl font-bold transition-all ${
                   pin.length !== 4 
                     ? 'bg-gray-300 cursor-not-allowed' 
-                    : (showPinModal === 'emergency' 
-                        ? (isShutdown ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700')
-                        : (isOrderFormDisabled ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700')
-                      )
+                    : (({
+                        systemShutdown: isShutdown ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700',
+                        orderFormToggle: isOrderFormDisabled ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-600 hover:bg-yellow-700',
+                        productsPage: 'bg-blue-600 hover:bg-blue-700',
+                        settings: 'bg-slate-700 hover:bg-slate-600',
+                        broadcast: 'bg-amber-600 hover:bg-amber-700',
+                        tableManagement: 'bg-teal-600 hover:bg-teal-700',
+                        statistics: 'bg-purple-600 hover:bg-purple-700'
+                      } as any)[showPinModal as Exclude<typeof showPinModal, null>])
                 }`}
               >
-                {showPinModal === 'emergency' 
-                  ? (isShutdown ? '✅ Aktivieren' : '🚨 Abschalten')
-                  : (isOrderFormDisabled ? '✅ Aktivieren' : '🔒 Sperren')
-                }
+                {{
+                  systemShutdown: isShutdown ? '✅ Aktivieren' : '🚨 Abschalten',
+                  orderFormToggle: isOrderFormDisabled ? '✅ Aktivieren' : '🔒 Sperren',
+                  productsPage: 'Öffnen',
+                  settings: 'Öffnen',
+                  broadcast: 'Öffnen',
+                  tableManagement: 'Öffnen',
+                  statistics: 'Öffnen'
+                }[showPinModal as Exclude<typeof showPinModal, null>]}
               </button>
             </div>
           </div>

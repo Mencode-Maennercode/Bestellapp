@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { AppSettings, defaultSettings, getSettings } from '@/lib/settings';
 import { 
   createTables, 
   deleteAllTables, 
   getAllTables, 
-  getAllTableCodes,
   type Table 
 } from '@/lib/dynamicTables';
 import TablePreviewModal from './TablePreviewModal';
@@ -22,12 +21,8 @@ interface TableQR {
 
 export default function TablesManagementPanel({ baseUrl = '' }: TablesManagementPanelProps) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
-  const [tables, setTables] = useState<TableQR[]>([]);
   const [loading, setLoading] = useState(true);
-  const [startTable, setStartTable] = useState(1);
-  const [endTable, setEndTable] = useState(10);
   const [generating, setGenerating] = useState(false);
-  const printRef = useRef<HTMLDivElement>(null);
 
   // Dynamic table management state
   const [tableCount, setTableCount] = useState<string>('');
@@ -36,8 +31,7 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
   const [showDynamicQRs, setShowDynamicQRs] = useState(false);
   const [showTablePreview, setShowTablePreview] = useState(false);
 
-  // Tab management
-  const [activeTab, setActiveTab] = useState<'print' | 'manage' | 'preview'>('print');
+  // Tab management removed – single section view
 
   useEffect(() => {
     loadSettingsAndTables();
@@ -54,39 +48,6 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
       console.error('Error loading settings:', err);
     }
     setLoading(false);
-  };
-
-  // QR Code generation for existing tables
-  const generateQRCodes = async () => {
-    setGenerating(true);
-    const newTables: TableQR[] = [];
-    
-    for (let i = startTable; i <= endTable; i++) {
-      const code = `T${i.toString().padStart(3, '0')}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
-      const url = `${baseUrl || window.location.origin}/tisch/${code}`;
-      
-      try {
-        const qrDataUrl = await QRCode.toDataURL(url, {
-          width: 200,
-          margin: 1,
-          color: {
-            dark: settings.colors?.primaryTisch || '#009640',
-            light: '#FFFFFF',
-          },
-        });
-        
-        newTables.push({
-          tableNumber: i,
-          code,
-          qrDataUrl,
-        });
-      } catch (err) {
-        console.error(`Error generating QR for table ${i}:`, err);
-      }
-    }
-    
-    setTables(newTables);
-    setGenerating(false);
   };
 
   // Dynamic table management
@@ -204,147 +165,6 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
     }
   };
 
-  const handlePrint = () => {
-    const tablesToPrint = dynamicQRCodes.length > 0 ? dynamicQRCodes : tables;
-    if (tablesToPrint.length === 0) return;
-    
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Popup-Blocker verhindert das Öffnen. Bitte erlauben Sie Popups für diese Seite.');
-      return;
-    }
-
-    const primaryColor = settings.colors?.primaryTisch || '#009640';
-    const secondaryColor = settings.colors?.secondaryTisch || '#FFCC00';
-    const logoUrl = settings.logo || 'https://www.energieschub.evm.de/media/ecb72371a2/1a53b5737ffd_180x180_boxed.jpg';
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>QR-Codes Tische ${startTable}-${endTable}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          @page { size: A4; margin: 8mm; }
-          body { font-family: 'Inter', system-ui, sans-serif; }
-          .page { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            grid-template-rows: repeat(2, 1fr);
-            gap: 8mm;
-            height: 281mm;
-            page-break-after: always;
-          }
-          .page:last-child { page-break-after: auto; }
-          .qr-card {
-            border: 4px solid ${primaryColor};
-            border-radius: 16px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            background: linear-gradient(180deg, ${primaryColor}15 0%, #ffffff 30%, #ffffff 100%);
-            position: relative;
-            overflow: hidden;
-          }
-          .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 8px;
-          }
-          .logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid ${primaryColor};
-          }
-          .table-number {
-            font-size: 56px;
-            font-weight: 900;
-            color: ${primaryColor};
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            line-height: 1;
-          }
-          .table-label {
-            font-size: 18px;
-            font-weight: 600;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-bottom: -5px;
-          }
-          .qr-image {
-            width: 140px;
-            height: 140px;
-            margin: 8px 0;
-            border-radius: 8px;
-            border: 3px solid ${primaryColor};
-            padding: 5px;
-            background: white;
-          }
-          .scan-text {
-            font-size: 16px;
-            color: #333;
-            text-align: center;
-            font-weight: 600;
-            background: ${secondaryColor};
-            padding: 8px 20px;
-            border-radius: 20px;
-            margin-top: 5px;
-          }
-          .footer-text {
-            font-size: 11px;
-            color: #999;
-            text-align: center;
-            margin-top: 5px;
-          }
-          .corner-decoration {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: ${primaryColor};
-          }
-          .corner-tl { top: 0; left: 0; border-radius: 0 0 100% 0; }
-          .corner-tr { top: 0; right: 0; border-radius: 0 0 0 100%; }
-          .corner-bl { bottom: 0; left: 0; border-radius: 0 100% 0 0; }
-          .corner-br { bottom: 0; right: 0; border-radius: 100% 0 0 0; }
-          @media print {
-            .no-print { display: none; }
-          }
-        </style>
-      </head>
-      <body>
-        ${Array.from({ length: Math.ceil(tablesToPrint.length / 4) }, (_, pageIndex) => `
-          <div class="page">
-            ${tablesToPrint.slice(pageIndex * 4, (pageIndex + 1) * 4).map(table => `
-              <div class="qr-card">
-                <div class="corner-decoration corner-tl"></div>
-                <div class="corner-decoration corner-tr"></div>
-                <div class="corner-decoration corner-bl"></div>
-                <div class="corner-decoration corner-br"></div>
-                <div class="logo-container">
-                  <img class="logo" src="${logoUrl}" alt="Logo" />
-                </div>
-                <div class="table-label">Tisch</div>
-                <div class="table-number">${table.tableNumber}</div>
-                <img class="qr-image" src="${table.qrDataUrl}" alt="QR Code" />
-                <div class="scan-text">📱 Scannen zum Bestellen</div>
-                <div class="footer-text">Fastelovend 2026</div>
-              </div>
-            `).join('')}
-          </div>
-        `).join('')}
-        <script>
-          window.onload = function() { window.print(); }
-        </script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
 
   // Print function for dynamically generated QR codes
   const handlePrintDynamicQRCodes = () => {
@@ -539,126 +359,7 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
 
   return (
     <div className="space-y-6">
-      {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-slate-700">
-        <button
-          onClick={() => setActiveTab('print')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'print' 
-              ? 'text-blue-400 border-b-2 border-blue-400' 
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          📱 QR-Codes drucken
-        </button>
-        <button
-          onClick={() => setActiveTab('manage')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'manage' 
-              ? 'text-blue-400 border-b-2 border-blue-400' 
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          🪑 Tische verwalten
-        </button>
-        <button
-          onClick={() => setActiveTab('preview')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'preview' 
-              ? 'text-blue-400 border-b-2 border-blue-400' 
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          👁️ Tisch-Vorschau
-        </button>
-      </div>
-
-      {/* Print QR Codes Tab */}
-      {activeTab === 'print' && (
-        <>
-          {/* Range Selection */}
-          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-            <h3 className="text-lg font-semibold mb-3">📱 Tischbereich wählen</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Von Tisch</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={startTable}
-                  onChange={(e) => setStartTable(parseInt(e.target.value) || 1)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Bis Tisch</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={endTable}
-                  onChange={(e) => setEndTable(parseInt(e.target.value) || 44)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2"
-                />
-              </div>
-            </div>
-            <button
-              onClick={generateQRCodes}
-              disabled={generating}
-              className="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold transition-colors"
-            >
-              {generating ? 'Generiere...' : '🔄 QR-Codes generieren'}
-            </button>
-          </div>
-
-          {/* Preview */}
-          {tables.length > 0 && (
-            <>
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold">👁️ Vorschau</h3>
-                  <span className="text-sm text-slate-400">{tables.length} Tische • {Math.ceil(tables.length / 4)} Seiten</span>
-                </div>
-                <div ref={printRef} className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
-                  {tables.slice(0, 8).map(table => (
-                    <div 
-                      key={table.tableNumber} 
-                      className="bg-white rounded-lg p-3 flex flex-col items-center"
-                      style={{ borderColor: settings.colors?.primaryTisch, borderWidth: 2 }}
-                    >
-                      <div 
-                        className="text-2xl font-bold"
-                        style={{ color: settings.colors?.primaryTisch }}
-                      >
-                        Tisch {table.tableNumber}
-                      </div>
-                      <img src={table.qrDataUrl} alt={`QR ${table.tableNumber}`} className="w-20 h-20" />
-                      <div className="text-xs text-gray-500 font-mono">{table.code}</div>
-                    </div>
-                  ))}
-                </div>
-                {tables.length > 8 && (
-                  <p className="text-sm text-slate-400 text-center mt-2">
-                    + {tables.length - 8} weitere Tische
-                  </p>
-                )}
-              </div>
-
-              <button
-                onClick={handlePrint}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-bold text-lg transition-colors"
-              >
-                🖨️ QR-Codes drucken (4 pro Seite)
-              </button>
-            </>
-          )}
-        </>
-      )}
-
-      {/* Manage Tables Tab */}
-      {activeTab === 'manage' && (
-        <div className="space-y-6">
+      <div className="space-y-6">
           {/* Current Status */}
           <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
             <h3 className="text-lg font-semibold mb-3 text-blue-400">📊 Aktueller Status</h3>
@@ -738,20 +439,7 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
                 </div>
               )}
 
-              {/* Delete All Tables */}
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <h3 className="text-lg font-semibold mb-3 text-red-400">🗑️ Alle Tische löschen</h3>
-                <p className="text-slate-300 mb-4">
-                  Löscht alle aktuellen Tische und ihre QR-Codes. Diese Aktion kann nicht rückgängig gemacht werden!
-                </p>
-                <button
-                  onClick={deleteAllTablesAndReset}
-                  disabled={generating || currentTables.length === 0}
-                  className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 disabled:bg-gray-600 transition-colors"
-                >
-                  🗑️ Alle Tische löschen
-                </button>
-              </div>
+              {/* Delete section moved below Demo block */}
             </>
           ) : (
             /* QR Codes Display */
@@ -802,11 +490,9 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
               </div>
             </div>
           )}
-        </div>
-      )}
+      </div>
 
-      {/* Table Preview Tab */}
-      {activeTab === 'preview' && (
+      {/* Demo preview moved into Manage section */}
         <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
           <h3 className="text-lg font-semibold mb-3 text-teal-400">👁️ Tisch-Demo</h3>
           <p className="text-slate-300 mb-4">
@@ -819,18 +505,23 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
             🪑 Demo-Tisch öffnen
           </button>
         </div>
-      )}
 
-      {/* Info */}
-      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-        <h4 className="font-semibold mb-2">ℹ️ Hinweise</h4>
-        <ul className="text-sm text-slate-400 space-y-1">
-          <li>• 4 QR-Codes pro A4-Seite</li>
-          <li>• Farben basieren auf den Einstellungen</li>
-          <li>• Jeder Code ist einzigartig pro Generierung</li>
-          <li>• Druckqualität: Am besten auf dickerem Papier</li>
-        </ul>
-      </div>
+      {/* Delete All Tables - moved to the bottom */}
+        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+          <h3 className="text-lg font-semibold mb-3 text-red-400">🗑️ Alle Tische löschen</h3>
+          <p className="text-slate-300 mb-4">
+            Löscht alle aktuellen Tische und ihre QR-Codes. Diese Aktion kann nicht rückgängig gemacht werden!
+          </p>
+          <button
+            onClick={deleteAllTablesAndReset}
+            disabled={generating || currentTables.length === 0}
+            className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 disabled:bg-gray-600 transition-colors"
+          >
+            🗑️ Alle Tische löschen
+          </button>
+        </div>
+
+      {/* Info (entfernt: QR-Druck Hinweise) */}
 
       {/* Table Preview Modal */}
       <TablePreviewModal 

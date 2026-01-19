@@ -611,31 +611,55 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Order Auto-Hide Setting */}
+        {/* Order Auto-Hide Setting (Allgemein) */}
         <section className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span>⏰</span> Bestellungen automatisch ausblenden
+            <span>⏰</span> Allgemein · Bestellungen automatisch ausblenden
           </h2>
           <p className="text-slate-400 text-sm mb-4">
-            Lege fest, nach wie vielen Minuten Bestellungen automatisch von der Theke und Kellner-Ansicht verschwinden. 0 = nie ausblenden.
+            Lege fest, ob Bestellungen automatisch aus der Theken- und Kellner-Ansicht verschwinden sollen. Wenn aktiviert, gib die Minuten an (mind. 5). 0 = aus.
           </p>
-          <div className="flex items-center gap-4">
-            <input
-              type="number"
-              min="0"
-              max="60"
-              value={settings.orderAutoHideMinutes || 6}
-              onChange={(e) => setSettings(prev => ({ ...prev, orderAutoHideMinutes: parseInt(e.target.value) || 0 }))}
-              className="w-24 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-center font-bold text-lg"
-            />
-            <span className="text-slate-300">Minuten</span>
-            {(settings.orderAutoHideMinutes || 6) === 0 && (
-              <span className="text-amber-400 text-sm">⚠️ Bestellungen werden nie ausgeblendet</span>
-            )}
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700">
+              <input
+                type="checkbox"
+                checked={(settings.orderAutoHideMinutes ?? 6) !== 0}
+                onChange={(e) => {
+                  const enabled = e.target.checked;
+                  setSettings(prev => ({
+                    ...prev,
+                    orderAutoHideMinutes: enabled
+                      ? Math.max(prev.orderAutoHideMinutes && prev.orderAutoHideMinutes > 0 ? prev.orderAutoHideMinutes : 5, 5)
+                      : 0
+                  }));
+                }}
+                className="w-5 h-5 rounded"
+              />
+              <span className="text-slate-300 font-medium">Automatisch ausblenden</span>
+            </label>
+
+            <div className="flex items-center gap-4">
+              <input
+                type="number"
+                min="5"
+                max="60"
+                disabled={(settings.orderAutoHideMinutes ?? 6) === 0}
+                value={(settings.orderAutoHideMinutes ?? 6) === 0 ? 5 : Math.max(settings.orderAutoHideMinutes ?? 6, 5)}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setSettings(prev => ({ ...prev, orderAutoHideMinutes: isNaN(val) ? 0 : Math.max(val, 5) }));
+                }}
+                className={`w-24 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-center font-bold text-lg ${((settings.orderAutoHideMinutes ?? 6) === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              />
+              <span className="text-slate-300">Minuten</span>
+              {(settings.orderAutoHideMinutes ?? 6) === 0 && (
+                <span className="text-amber-400 text-sm">⚠️ Automatisches Ausblenden ist deaktiviert</span>
+              )}
+            </div>
           </div>
           <div className="mt-4 p-3 bg-slate-700/50 rounded-lg">
             <p className="text-sm text-slate-400">
-              💡 <strong>Tipp:</strong> Standard ist 6 Minuten. Bei 0 bleiben alle Bestellungen sichtbar, bis sie manuell erledigt werden.
+              💡 <strong>Hinweis:</strong> Mindestwert ist 5 Minuten, wenn aktiviert. Bei 0 bleibt alles sichtbar, bis manuell erledigt.
             </p>
           </div>
         </section>

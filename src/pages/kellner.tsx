@@ -27,9 +27,9 @@ type AlertPhase = 'red' | 'orange' | 'green' | 'expired';
 function getAlertPhase(timestamp: number, autoHideMinutes: number = 6): AlertPhase {
   const elapsed = Date.now() - timestamp;
   const minutes = elapsed / 60000;
-  if (minutes < 1) return 'red';
-  if (minutes < 3) return 'orange';
-  if (minutes < 5) return 'green';
+  if (minutes < 2) return 'red';
+  if (minutes < 4) return 'orange';
+  // After 4 minutes: green until auto-hide threshold
   // Use autoHideMinutes setting (0 = never expire)
   if (autoHideMinutes === 0) return 'green'; // Never expire
   if (minutes >= autoHideMinutes) return 'expired';
@@ -138,6 +138,7 @@ export default function WaiterPage() {
   const [isSetup, setIsSetup] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [tableInput, setTableInput] = useState('');
+  const [tableInputError, setTableInputError] = useState<string | null>(null);
   const [availableTables, setAvailableTables] = useState<number[]>([]);
   const [, setTick] = useState(0);
   const [lastOrderCount, setLastOrderCount] = useState(0);
@@ -215,6 +216,7 @@ export default function WaiterPage() {
   // Add table modal
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [addTableInput, setAddTableInput] = useState('');
+  const [addTableError, setAddTableError] = useState<string | null>(null);
   
   // Free booking (order for non-assigned table)
   const [showFreeBookingModal, setShowFreeBookingModal] = useState(false);
@@ -474,7 +476,9 @@ export default function WaiterPage() {
         // Filter by assigned tables and not expired
         // Also filter out orders claimed by OTHER waiters (not this waiter)
         // And filter out orders that this waiter has completed (long-click)
-        const autoHideMinutes = settings.orderAutoHideMinutes ?? 6;
+        // Respect settings: 0 = never auto-hide, otherwise enforce minimum 5 minutes
+        const rawAutoHide = settings.orderAutoHideMinutes ?? 6;
+        const autoHideMinutes = rawAutoHide === 0 ? 0 : Math.max(rawAutoHide, 5);
         const myOrders = orderList
           .filter(order => {
             // Must be for one of my assigned tables
@@ -564,25 +568,78 @@ export default function WaiterPage() {
     setIsSetup(true);
   };
 
-  const handleAddTable = () => {
-    const num = parseInt(tableInput);
-    if (num && availableTables.includes(num) && !assignedTables.includes(num)) {
-      setAssignedTables([...assignedTables, num].sort((a, b) => a - b));
-      setTableInput('');
+  // Parse inputs like "1-3", "1;3;4", "1, 3, 4" and tolerate optional leading "T"
+  const parseTableEntries = (input: string): { values: number[]; error?: string } => {
+    const cleaned = (input || '').trim();
+    if (!cleaned) return { values: [], error: 'Bitte eine Zahl oder einen Bereich eingeben.' };
+    const parts = cleaned.split(/[;,\s]+/).filter(Boolean);
+    const values: number[] = [];
+    for (const part of parts) {
+      const p = part.replace(/^t/i, '');
+      if (/^\d+-\d+$/.test(p)) {
+        const [aStr, bStr] = p.split('-');
+        const a = parseInt(aStr, 10);
+        const b = parseInt(bStr, 10);
+        if (isNaN(a) || isNaN(b) || a < 1 || b < 1 || b < a) {
+          return { values: [], error: `Ungültiger Bereich: ${part}` };
+        }
+        for (let n = a; n <= b; n++) values.push(n);
+      } else if (/^\d+$/.test(p)) {
+        const n = parseInt(p, 10);
+        if (n < 1) return { values: [], error: `Ungültige Tischnummer: ${part}` };
+        values.push(n);
+      } else {
+        return { values: [], error: `Ungültiger Eintrag: ${part}` };
+      }
     }
+    return { values: Array.from(new Set(values)) };
+  };
+
+  const handleAddTable = () => {
+    const parseResult = parseTableEntries(tableInput);
+    if (parseResult.values.length === 0) {
+      setTableInputError(parseResult.error || 'Ungültige Eingabe. Erlaubt sind z. B. 1-3 oder 1;3;4');
+      return;
+    }
+    const invalid = parseResult.values.filter(v => !availableTables.includes(v));
+    if (invalid.length > 0) {
+      setTableInputError(`Diese Tische gibt es nicht: ${invalid.join(', ')}`);
+      return;
+    }
+    const toAdd = parseResult.values.filter(v => !assignedTables.includes(v));
+    if (toAdd.length === 0) {
+      setTableInputError('Keine neuen Tische zum Hinzufügen.');
+      return;
+    }
+    setTableInputError(null);
+    setAssignedTables([...assignedTables, ...toAdd].sort((a, b) => a - b));
+    setTableInput('');
   };
 
   // Add table while already set up (no restart needed)
   const handleAddTableWhileRunning = async () => {
-    const num = parseInt(addTableInput);
-    if (num && availableTables.includes(num) && !assignedTables.includes(num)) {
-      const newTables = [...assignedTables, num].sort((a, b) => a - b);
-      setAssignedTables(newTables);
-      localStorage.setItem('waiterTables', JSON.stringify(newTables));
-      await saveWaiterAssignment(waiterName, newTables);
-      setAddTableInput('');
-      setShowAddTableModal(false);
+    const parseResult = parseTableEntries(addTableInput);
+    if (parseResult.values.length === 0) {
+      setAddTableError(parseResult.error || 'Ungültige Eingabe. Erlaubt sind z. B. 1-3 oder 1;3;4');
+      return;
     }
+    const invalid = parseResult.values.filter(v => !availableTables.includes(v));
+    if (invalid.length > 0) {
+      setAddTableError(`Diese Tische gibt es nicht: ${invalid.join(', ')}`);
+      return;
+    }
+    const toAdd = parseResult.values.filter(v => !assignedTables.includes(v));
+    if (toAdd.length === 0) {
+      setAddTableError('Keine neuen Tische zum Hinzufügen.');
+      return;
+    }
+    setAddTableError(null);
+    const newTables = [...assignedTables, ...toAdd].sort((a, b) => a - b);
+    setAssignedTables(newTables);
+    localStorage.setItem('waiterTables', JSON.stringify(newTables));
+    await saveWaiterAssignment(waiterName, newTables);
+    setAddTableInput('');
+    setShowAddTableModal(false);
   };
 
   // Free booking - order for a table not in assigned list
@@ -687,10 +744,7 @@ export default function WaiterPage() {
     setWaiterName('');
     setAssignedTables([]);
     setIsSetup(false);
-    
-    // Show notification that table assignment was removed
-    setAssignmentRemovedReason('manual');
-    setShowTableAssignmentRemovedModal(true);
+    // Do NOT show the removal modal on manual reset; user already knows
   };
 
   // Handle order claim - SINGLE CLICK (for multi-waiter scenario)
@@ -1112,25 +1166,25 @@ export default function WaiterPage() {
               <p className="text-xs text-slate-400 mb-3">
                 Du kannst auch ohne Tische arbeiten und Bestellungen für beliebige Tische aufnehmen.
               </p>
-              <div className="flex gap-2 mb-3">
-                <select
+              <div className="flex gap-2 mb-1">
+                <input
+                  type="text"
                   value={tableInput}
                   onChange={(e) => setTableInput(e.target.value)}
+                  placeholder="z. B. 1-3 oder 1;3;4"
                   className="flex-1 p-3 bg-slate-700 border border-slate-600 rounded-xl text-white"
-                >
-                  <option value="">Tisch wählen...</option>
-                  {availableTables.filter(n => !assignedTables.includes(n)).map(num => (
-                    <option key={num} value={num}>Tisch {num}</option>
-                  ))}
-                </select>
+                />
                 <button
                   onClick={handleAddTable}
-                  disabled={!tableInput}
+                  disabled={!tableInput.trim()}
                   className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   +
                 </button>
               </div>
+              {tableInputError && (
+                <p className="text-red-400 text-sm mb-3">{tableInputError}</p>
+              )}
               
               {assignedTables.length > 0 && (
                 <div>
@@ -2275,21 +2329,18 @@ export default function WaiterPage() {
             </p>
             <div className="mb-4">
               <label className="block text-gray-700 font-bold mb-2">Tisch hinzufügen</label>
-              <div className="flex gap-2 mb-4">
-                <select
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
                   value={addTableInput}
                   onChange={(e) => setAddTableInput(e.target.value)}
+                  placeholder="z. B. 1-3 oder 1;3;4"
                   className="flex-1 p-3 border-2 border-gray-300 rounded-xl text-lg text-gray-800"
                   autoFocus
-                >
-                  <option value="">Tisch wählen...</option>
-                  {availableTables.filter(n => !assignedTables.includes(n)).map(num => (
-                    <option key={num} value={num}>Tisch {num}</option>
-                  ))}
-                </select>
+                />
                 <button
                   onClick={handleAddTableWhileRunning}
-                  disabled={!addTableInput}
+                  disabled={!addTableInput.trim()}
                   className="px-6 py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ 
                     backgroundColor: settings.colors.secondaryKellner,
@@ -2299,6 +2350,9 @@ export default function WaiterPage() {
                   +
                 </button>
               </div>
+              {addTableError && (
+                <p className="text-red-600 text-sm mb-4">{addTableError}</p>
+              )}
               
               {/* Current tables with remove option */}
               {assignedTables.length > 0 && (
