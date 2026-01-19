@@ -887,7 +887,7 @@ export default function SettingsPage() {
             <span>🔐</span> Admin-Zugang
           </h2>
           <p className="text-slate-400 text-sm mb-4">
-            Diese Seiten sind mit dem Code <span className="font-mono font-bold text-blue-400">A267</span> geschützt.
+            Diese Seiten sind mit dem Code <span className="font-mono font-bold text-blue-400">{ADMIN_CODE}</span> geschützt.
           </p>
           
           <div className="bg-slate-700/50 rounded-xl p-4">
@@ -895,15 +895,15 @@ export default function SettingsPage() {
             <div className="space-y-2 text-sm font-mono">
               <div className="flex items-center gap-2">
                 <span className="text-slate-500">Theke:</span>
-                <code className="text-green-400">/bar/A267</code>
+                <code className="text-green-400">/bar/{ADMIN_CODE}</code>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-slate-500">Kellner:</span>
-                <code className="text-green-400">/kellner/A267</code>
+                <code className="text-green-400">/kellner/{ADMIN_CODE}</code>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-slate-500">Einstellungen:</span>
-                <code className="text-green-400">/settings/A267</code>
+                <code className="text-green-400">/settings/{ADMIN_CODE}</code>
               </div>
             </div>
           </div>

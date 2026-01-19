@@ -71,6 +71,7 @@ interface BarDashboardProps {
 }
 
 export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
+  const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
   const [orders, setOrders] = useState<Order[]>([]);
   const [showWaiterQR, setShowWaiterQR] = useState(false);
   const [waiterQRCode, setWaiterQRCode] = useState('');
@@ -487,7 +488,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
   };
 
   const handleShowWaiterQR = async () => {
-    const waiterUrl = `${window.location.origin}/kellner`;
+    const waiterUrl = `${window.location.origin}/kellner/${ADMIN_CODE}`;
     const qrDataUrl = await QRCode.toDataURL(waiterUrl, {
       width: 400,
       margin: 2,
@@ -737,11 +738,11 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
               </div>
             )}
             <p className="text-sm text-gray-500 text-center mb-4">
-              {window.location.origin}/kellner
+              {window.location.origin}/kellner/{ADMIN_CODE}
             </p>
             <div className="flex gap-3 mb-3">
               <button
-                onClick={() => window.open(`${window.location.origin}/kellner`, '_blank')}
+                onClick={() => window.open(`${window.location.origin}/kellner/${ADMIN_CODE}`, '_blank')}
                 className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold"
               >
                 Demo Kellner öffnen
@@ -1003,7 +1004,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
           </div>
           {showProductsPanel && (
             <iframe
-              src="/produkte"
+              src={`/produkte/${ADMIN_CODE}`}
               className="w-full border-0"
               style={{ height: 'calc(100vh - 72px)' }}
               title="Produkte & Preise"
