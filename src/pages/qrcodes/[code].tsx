@@ -4,9 +4,9 @@ import dynamic from 'next/dynamic';
 
 const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
 
-const BarPageContent = dynamic(() => import('../../components/BarPageContent'), { ssr: false });
+const QRCodesPageContent = dynamic(() => import('../../components/QRCodesPageContent'), { ssr: false });
 
-export default function ProtectedBar2Page() {
+export default function ProtectedQRCodesPage() {
   const router = useRouter();
   const { code } = router.query;
   const [authorized, setAuthorized] = useState(false);
@@ -23,7 +23,7 @@ export default function ProtectedBar2Page() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f1419 0%, #1a1f26 100%)' }}>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-white text-xl">Laden...</div>
       </div>
     );
@@ -31,7 +31,7 @@ export default function ProtectedBar2Page() {
 
   if (!authorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f1419 0%, #1a1f26 100%)' }}>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🚫</div>
           <h1 className="text-white text-2xl font-bold mb-2">Zugang verweigert</h1>
@@ -41,6 +41,5 @@ export default function ProtectedBar2Page() {
     );
   }
 
-  // /bar2/A267 = Theke 3 (index 2)
-  return <BarPageContent thekeIndex={2} />;
+  return <QRCodesPageContent />;
 }

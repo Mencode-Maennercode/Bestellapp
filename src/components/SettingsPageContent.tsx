@@ -17,6 +17,7 @@ import {
 } from '@/lib/settings';
 
 export default function SettingsPage() {
+  const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -288,7 +289,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center gap-2">
             <a
-              href="/bar/A267"
+              href={`/bar/${ADMIN_CODE}`}
               className="px-3 py-2 rounded-lg text-sm font-medium bg-slate-700/50 text-slate-300 hover:bg-slate-700 transition-all"
             >
               ← Theke

@@ -8,6 +8,8 @@ interface QRCodeModalProps {
 const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
+  const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl p-8 max-w-2xl w-full text-gray-900" onClick={(e) => e.stopPropagation()}>
@@ -28,7 +30,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose }) => {
               Generiere QR-Codes für alle 44 Tische deiner Karnevalsveranstaltung.
             </p>
             <Link
-              href="/qrcodes"
+              href={`/qrcodes/${ADMIN_CODE}`}
               target="_blank"
               className="inline-block px-6 py-3 bg-evm-yellow text-black rounded-xl font-bold hover:bg-yellow-600 transition-all"
             >

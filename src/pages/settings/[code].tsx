@@ -2,9 +2,9 @@ import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
-const ADMIN_CODE = 'A267';
+const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
 
-const SettingsPageContent = dynamic(() => import('../settings'), { ssr: false });
+const SettingsPageContent = dynamic(() => import('../../components/SettingsPageContent'), { ssr: false });
 
 export default function ProtectedSettingsPage() {
   const router = useRouter();

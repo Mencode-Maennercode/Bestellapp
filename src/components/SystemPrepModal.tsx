@@ -15,6 +15,8 @@ const SystemPrepModal: React.FC<SystemPrepModalProps> = ({ isOpen, onClose }) =>
 
   if (!isOpen) return null;
 
+  const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto text-gray-900" onClick={(e) => e.stopPropagation()}>
@@ -53,7 +55,7 @@ const SystemPrepModal: React.FC<SystemPrepModalProps> = ({ isOpen, onClose }) =>
                   Mobile Ansicht für Kellner zur Verwaltung ihrer zugewiesenen Tische.
                 </p>
                 <Link
-                  href="/kellner"
+                  href={`/kellner/${ADMIN_CODE}`}
                   target="_blank"
                   className="inline-block px-6 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-all mr-3"
                 >

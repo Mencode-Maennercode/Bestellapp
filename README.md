@@ -74,6 +74,8 @@ Kopiere `.env.example` zu `.env.local` und fülle die Firebase-Werte ein:
 cp .env.example .env.local
 ```
 
+**Wichtig**: Setze auch `NEXT_PUBLIC_ADMIN_CODE` auf einen einzigartigen, schwer zu erratenden Code!
+
 ### 3. Installation
 
 ```bash
@@ -90,7 +92,7 @@ npm run dev
 
 ### 5. QR-Codes drucken
 
-1. Öffne `/qrcodes` auf der deployten Seite
+1. Öffne `/qrcodes/V26K` auf der deployten Seite (mit deinem Admin-Code)
 2. Gib deine Vercel-URL ein
 3. Klicke "QR-Codes generieren"
 4. Drucke alle Codes aus
@@ -99,13 +101,20 @@ npm run dev
 
 ### URLs
 
+⚠️ **WICHTIG**: Alle administrativen URLs benötigen einen Zugangscode!
+
 | Seite | URL | Beschreibung |
 |-------|-----|--------------|
-| Home | `/` | Hauptmenü |
-| Theke | `/bar` | Bildschirm hinter der Bar |
-| Kellner | `/kellner` | Kellner-Handy |
-| QR-Codes | `/qrcodes` | QR-Codes generieren |
-| Tisch | `/tisch/[CODE]` | Gäste-Bestellseite |
+| Theke | `/bar/V26K` | Bildschirm hinter der Bar |
+| Theke 2 | `/bar1/V26K` | Zweite Theke |
+| Theke 3 | `/bar2/V26K` | Dritte Theke |
+| Kellner | `/kellner/V26K` | Kellner-Handy |
+| Einstellungen | `/settings/V26K` | System-Einstellungen |
+| Produkte | `/produkte/V26K` | Produkte & Preise verwalten |
+| QR-Codes | `/qrcodes/V26K` | QR-Codes generieren |
+| Tisch | `/tische/[CODE]` | Gäste-Bestellseite (jeder Tisch hat eigenen Code) |
+
+**Hinweis**: Der Zugangscode `V26K` kann in der `.env.local` Datei geändert werden. Siehe [SECURITY.md](./SECURITY.md) für Details.
 
 ### Farbcodierung (Theke & Kellner)
 
@@ -123,6 +132,17 @@ npm run dev
 ## Tisch-Codes
 
 Die 44 Tische haben verschlüsselte Codes (z.B. K17A, M23B) statt einfacher Nummern, um Missbrauch zu verhindern.
+
+## Sicherheit
+
+🔒 **Alle administrativen Seiten sind geschützt!**
+
+- Die Root-URL (`/`) zeigt eine "Zugang verweigert" Meldung
+- Alle Admin-Routen benötigen einen Zugangscode in der URL
+- Der Code wird über die Umgebungsvariable `NEXT_PUBLIC_ADMIN_CODE` konfiguriert
+- Gäste können nur ihre eigenen Tische über die einzigartigen QR-Codes erreichen
+
+Siehe [SECURITY.md](./SECURITY.md) für vollständige Sicherheitsdokumentation.
 
 ## Tech Stack
 

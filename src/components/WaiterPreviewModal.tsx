@@ -8,6 +8,8 @@ interface WaiterPreviewModalProps {
 const WaiterPreviewModal: React.FC<WaiterPreviewModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
+  const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
+
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl p-8 max-w-2xl w-full text-gray-900" onClick={(e) => e.stopPropagation()}>
@@ -29,7 +31,7 @@ const WaiterPreviewModal: React.FC<WaiterPreviewModalProps> = ({ isOpen, onClose
               Mobile Ansicht für Kellner zur Verwaltung ihrer zugewiesenen Tische.
             </p>
             <Link
-              href="/kellner"
+              href={`/kellner/${ADMIN_CODE}`}
               target="_blank"
               className="inline-block px-6 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-all"
             >
