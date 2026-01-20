@@ -10,7 +10,7 @@ import {
   TABLES_PATH
 } from '@/lib/dynamicTables';
 import { database } from '@/lib/firebase';
-import { ref, set as fbSet } from 'firebase/database';
+import { ref, set as fbSet, remove as fbRemove } from 'firebase/database';
 import TablePreviewModal from './TablePreviewModal';
 
 interface TablesManagementPanelProps {
@@ -104,11 +104,28 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
     }
   };
 
-  const handleRemoveCustomTable = (tableId: string) => {
-    setSettings(prev => ({
-      ...prev,
-      customTables: (prev.customTables || []).filter(t => t.id !== tableId)
-    }));
+  const handleRemoveCustomTable = async (tableId: string) => {
+    if (!confirm('Diesen individuellen Tisch wirklich löschen?')) return;
+
+    const updated = {
+      ...settings,
+      customTables: (settings.customTables || []).filter(t => t.id !== tableId)
+    };
+    setSettings(updated);
+    try {
+      await saveSettings(updated);
+    } catch (err) {
+      console.error('Fehler beim Speichern der Einstellungen nach dem Entfernen des individuellen Tisches:', err);
+    }
+
+    try {
+      const dbId = `custom_${tableId}`;
+      await fbRemove(ref(database, `${TABLES_PATH}/${dbId}`));
+    } catch (err) {
+      console.error('Fehler beim endgültigen Löschen des individuellen Tisches aus der Datenbank:', err);
+    }
+
+    await loadCurrentTables();
   };
 
   // Dynamic table management
@@ -599,7 +616,7 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
 
               {/* Demo preview */}
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <h3 className="text-lg font-semibold mb-3 text-teal-400">👁️ tisch demo</h3>
+                <h3 className="text-lg font-semibold mb-3 text-teal-400">👁️ Demo-Tisch</h3>
                 <p className="text-slate-300 mb-4">
                   Öffnet den Demo-Tisch zum Testen der Bestellfunktion.
                 </p>
@@ -613,7 +630,7 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
 
               {/* Delete All Tables */}
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <h3 className="text-lg font-semibold mb-3 text-red-400">🗑️ tisch löschen</h3>
+                <h3 className="text-lg font-semibold mb-3 text-red-400">🗑️ Tische löschen</h3>
                 <p className="text-slate-300 mb-4">
                   Löscht alle aktuellen Tische und ihre QR-Codes. Diese Aktion kann nicht rückgängig gemacht werden!
                 </p>
