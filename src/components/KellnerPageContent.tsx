@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter } from 'next/router';
 import { database, ref, onValue, remove, push, set } from '@/lib/firebase';
 import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
 import { getMenuConfiguration, type MenuConfiguration, getDrinkDatabase, type DrinkDatabase, getCategoryDatabase } from '@/lib/menuManager';
 import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, saveWaiterAssignment, getContrastTextColor } from '@/lib/settings';
 import { getActualGeneratedTableNumbers } from '@/lib/tables';
+import TablePlanCarousel from '@/components/TablePlanCarousel';
 
 interface Order {
   id: string;
@@ -150,6 +152,7 @@ export default function WaiterPage() {
   const [alarmEnabled, setAlarmEnabled] = useState(false);
   const [showActivation, setShowActivation] = useState(true);
   const [wakeLock, setWakeLock] = useState<any>(null);
+  const router = useRouter();
   
   // Waiter order form state
   const [showOrderForm, setShowOrderForm] = useState(false);
@@ -250,6 +253,8 @@ export default function WaiterPage() {
   // Table assignment removed notification
   const [showTableAssignmentRemovedModal, setShowTableAssignmentRemovedModal] = useState(false);
   const [assignmentRemovedReason, setAssignmentRemovedReason] = useState<'manual' | 'bar'>('manual');
+  const [manualResetInProgress, setManualResetInProgress] = useState(false);
+  const [isSelfRefreshing, setIsSelfRefreshing] = useState(false);
   
   // Cart preview modal state
   const [showCartPreview, setShowCartPreview] = useState(false);
@@ -450,6 +455,9 @@ export default function WaiterPage() {
 
   // Load saved waiter data from localStorage
   useEffect(() => {
+    // Set self-refresh flag on mount to prevent modal during initial load
+    setIsSelfRefreshing(true);
+    
     const savedName = localStorage.getItem('waiterName');
     const savedTables = localStorage.getItem('waiterTables');
     
@@ -457,7 +465,16 @@ export default function WaiterPage() {
       setWaiterName(savedName);
       setAssignedTables(JSON.parse(savedTables));
       setIsSetup(true);
+      // Clear manual reset flag since user is now properly logged in again
+      setManualResetInProgress(false);
     }
+    
+    // Clear self-refresh flag after a short delay to allow Bar-triggered resets to work
+    const timer = setTimeout(() => {
+      setIsSelfRefreshing(false);
+    }, 2000); // 2 seconds should be enough for initial load
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // Listen to Firebase waiter assignments to detect if current waiter's assignment is removed
@@ -469,19 +486,23 @@ export default function WaiterPage() {
       const data = snapshot.val();
       
       // If assignments are completely deleted or this waiter's assignment is missing
+      // AND this is not a manual reset (user logging back in after manual reset)
+      // AND this is not a self-refresh (waiter refreshing their own page)
       if (!data || !data[waiterName]) {
         // Only clear tables, keep waiter logged in
         setAssignedTables([]);
         localStorage.setItem('waiterTables', JSON.stringify([]));
         
-        // Show notification that assignment was removed
-        setAssignmentRemovedReason('bar');
-        setShowTableAssignmentRemovedModal(true);
+        // Show notification that assignment was removed, but only if not a manual reset and not self-refreshing
+        if (!manualResetInProgress && !isSelfRefreshing) {
+          setAssignmentRemovedReason('bar');
+          setShowTableAssignmentRemovedModal(true);
+        }
       }
     });
 
     return () => unsubscribe();
-  }, [waiterName, isSetup]);
+  }, [waiterName, isSetup, manualResetInProgress, isSelfRefreshing]);
 
   // Subscribe to orders - trigger alarm on new orders
   useEffect(() => {
@@ -588,6 +609,9 @@ export default function WaiterPage() {
     
     // Save to Firebase for multi-waiter tracking
     await saveWaiterAssignment(waiterName, assignedTables);
+    
+    // Clear manual reset flag since user is now properly logged in again
+    setManualResetInProgress(false);
     
     setIsSetup(true);
   };
@@ -751,6 +775,9 @@ export default function WaiterPage() {
   };
 
   const handleReset = async () => {
+    // Set flag to indicate this is a manual reset
+    setManualResetInProgress(true);
+    
     // Remove from Firebase first
     if (waiterName) {
       try {
@@ -769,6 +796,18 @@ export default function WaiterPage() {
     setAssignedTables([]);
     setIsSetup(false);
     // Do NOT show the removal modal on manual reset; user already knows
+  };
+
+  // Get display name for a table (handles both regular and custom tables)
+  const getTableName = (tableNumber: number): string => {
+    if (tableNumber >= 1000 && settings.customTables) {
+      const customIndex = tableNumber - 1000;
+      const customTable = settings.customTables[customIndex];
+      if (customTable && customTable.name) {
+        return customTable.name;
+      }
+    }
+    return `T${tableNumber}`;
   };
 
   // Handle order claim - SINGLE CLICK (for multi-waiter scenario)
@@ -1186,7 +1225,7 @@ export default function WaiterPage() {
 
             {/* Table Selection */}
             <div className="mb-6">
-              <label className="block text-slate-300 font-medium mb-2">Deine Tische (optional)</label>
+              <label className="block text-slate-300 font-medium mb-2">Normale Tische (optional)</label>
               <p className="text-xs text-slate-400 mb-3">
                 Du kannst auch ohne Tische arbeiten und Bestellungen für beliebige Tische aufnehmen.
               </p>
@@ -1210,21 +1249,21 @@ export default function WaiterPage() {
                 <p className="text-red-400 text-sm mb-3">{tableInputError}</p>
               )}
               
-              {assignedTables.length > 0 && (
+              {assignedTables.filter(num => num < 1000).length > 0 && (
                 <div>
                   <p className="text-xs text-slate-400 mb-2">
                     💡 Klicke auf einen Tisch um ihn zu entfernen:
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {assignedTables.map(num => (
-                      <span 
+                    {assignedTables.filter(num => num < 1000).map(num => (
+                      <button
                         key={num}
                         onClick={() => handleRemoveTable(num)}
-                        className="px-4 py-2 bg-blue-600/30 text-blue-300 rounded-lg font-bold cursor-pointer hover:bg-red-600/30 hover:text-red-300 transition-all transform hover:scale-105"
+                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-bold hover:bg-red-100 hover:text-red-700 transition-colors"
                         title={`Tisch ${num} entfernen`}
                       >
                         T{num} ✕
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -1261,6 +1300,44 @@ export default function WaiterPage() {
                 </button>
               </div>
             </div>
+
+            {/* Custom Tables Quick Select */}
+            {(settings.customTables || []).length > 0 && (
+              <div className="mb-6">
+                <label className="block text-slate-300 font-medium mb-2">🪑 Individuelle Tische</label>
+                <p className="text-xs text-slate-400 mb-3">
+                  Klicke auf einen individuellen Tisch um ihn hinzuzufügen/zu entfernen:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {settings.customTables?.map((table) => {
+                    const customTableNum = (settings.customTables?.findIndex(t => t.id === table.id) || 0) + 1000;
+                    const isAssigned = assignedTables.includes(customTableNum);
+                    return (
+                      <button
+                        key={table.id}
+                        onClick={() => {
+                          if (isAssigned) {
+                            handleRemoveTable(customTableNum);
+                          } else {
+                            const newTables = [...assignedTables, customTableNum].sort((a, b) => a - b);
+                            setAssignedTables(newTables);
+                            localStorage.setItem('waiterTables', JSON.stringify(newTables));
+                            saveWaiterAssignment(waiterName, newTables);
+                          }
+                        }}
+                        className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
+                          isAssigned
+                            ? 'bg-green-500 text-white'
+                            : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                        }`}
+                      >
+                        {table.name} {isAssigned ? '✓' : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <button
               onClick={handleSetup}
@@ -1380,7 +1457,7 @@ export default function WaiterPage() {
             </button>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {settings.tablePlanImage && (
+            {(settings.tablePlans && settings.tablePlans.length > 0) && (
               <button
                 onClick={() => setShowTablePlan(true)}
                 className="px-3 py-2 rounded-lg text-sm"
@@ -1389,7 +1466,7 @@ export default function WaiterPage() {
                   color: getContrastTextColor(settings.colors.primaryKellner)
                 }}
               >
-                🗺️ Plan
+                🗺️ Pläne ({settings.tablePlans.length})
               </button>
             )}
             <button
@@ -1402,18 +1479,6 @@ export default function WaiterPage() {
             >
               🔊 Test
             </button>
-            {showInstallButton && (
-              <button
-                onClick={handleInstallPWA}
-                className="px-3 py-2 rounded-lg text-sm"
-                style={{
-                  backgroundColor: 'rgba(34, 197, 94, 0.3)',
-                  color: getContrastTextColor(settings.colors.primaryKellner)
-                }}
-              >
-                📲 App
-              </button>
-            )}
           </div>
         </div>
         {alarmEnabled && (
@@ -1526,7 +1591,7 @@ export default function WaiterPage() {
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-4xl font-black">
-                        T{order.tableNumber}
+                        {getTableName(order.tableNumber)}
                       </span>
                       {isClaimed && (
                         <span className="bg-white/30 px-2 py-1 rounded text-sm">
@@ -1583,40 +1648,69 @@ export default function WaiterPage() {
         )}
       </div>
 
-      {/* Order Count Badge */}
+      {/* Order Count Badge - positioned above footer */}
       {orders.length > 0 && (
-        <div className="fixed bottom-6 right-6 w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-xl">
+        <div className="fixed bottom-32 right-4 w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-xl z-40">
           {orders.length}
         </div>
       )}
 
-      {/* Quick Order Buttons for assigned tables */}
-      <div className="fixed bottom-6 left-6 right-24">
-        <div className="bg-white rounded-2xl shadow-xl p-3">
-          <p className="text-xs text-gray-500 mb-2 text-center">🛒 Bestellung aufgeben für:</p>
+      {/* Footer with Quick Order Buttons */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-8 z-40">
+        <div className="max-w-lg mx-auto space-y-3">
           <div className="flex flex-wrap gap-2 justify-center">
-            {assignedTables.map(tableNum => (
-              <button
-                key={tableNum}
-                onClick={() => handleOpenOrderForm(tableNum)}
-                className="px-4 py-2 h-9 min-w-[3rem] flex items-center justify-center rounded-lg font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
-              >
-                T{tableNum}
-              </button>
-            ))}
+            {assignedTables.map((tableNum) => {
+              const isCustom = tableNum >= 1000;
+              const customTable = isCustom ? settings.customTables?.[tableNum - 1000] : null;
+              return (
+                <button
+                  key={tableNum}
+                  onClick={() => handleOpenOrderForm(tableNum)}
+                  className="px-4 py-2 h-10 min-w-[3.5rem] flex items-center justify-center rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+                >
+                  {isCustom ? customTable?.name : `T${tableNum}`}
+                </button>
+              );
+            })}
             {/* Free Booking Button */}
             <button
               onClick={handleStartFreeBooking}
-              className="px-4 py-2 rounded-lg font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+              className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
             >
               📝 Frei
             </button>
             {/* Add Table Button */}
             <button
               onClick={() => setShowAddTableModal(true)}
-              className="px-4 py-2 rounded-lg font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+              className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
             >
               +/- Tisch
+            </button>
+          </div>
+          {/* App Download Button in Footer - always visible for testing */}
+          <div className="flex justify-center">
+            <button
+              onClick={handleInstallPWA}
+              className="px-6 py-2 rounded-xl font-bold text-sm bg-green-500 text-white active:scale-95 transition-transform shadow-sm"
+            >
+              📲 Als App installieren
+            </button>
+          </div>
+          
+          {/* Footer Links */}
+          <div className="flex justify-center gap-4 mt-4 pb-4">
+            <span className="text-xs text-gray-500">© 2026 PräsenzWert</span>
+            <button
+              onClick={() => router.push('/impressum')}
+              className="text-xs text-gray-600 hover:text-gray-800 underline"
+            >
+              Impressum
+            </button>
+            <button
+              onClick={() => router.push('/datenschutz')}
+              className="text-xs text-gray-600 hover:text-gray-800 underline"
+            >
+              Datenschutz
             </button>
           </div>
         </div>
@@ -1636,7 +1730,7 @@ export default function WaiterPage() {
                 <div className="p-4 border-b bg-gray-50">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-bold text-gray-800">
-                      🛍️ Bestellung für T{orderTableNumber}
+                      🛍️ Bestellung für {getTableName(orderTableNumber)}
                     </h2>
                     <button
                       onClick={() => setShowOrderForm(false)}
@@ -2305,7 +2399,7 @@ export default function WaiterPage() {
       {/* Add Table Modal */}
       {showAddTableModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full max-h-[85vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-800">🪑 Tische verwalten</h2>
               <button onClick={() => setShowAddTableModal(false)} className="text-2xl text-gray-500">✕</button>
@@ -2313,6 +2407,42 @@ export default function WaiterPage() {
             <p className="text-gray-600 text-sm mb-4">
               Verwalte deine Tische: Füge neue hinzu oder entferne einzelne Tische von deiner Liste.
             </p>
+            
+            {/* Custom Tables Quick Add */}
+            {(settings.customTables || []).length > 0 && (
+              <div className="mb-4">
+                <label className="block text-gray-700 font-bold mb-2">🪑 Individuelle Tische</label>
+                <div className="flex flex-wrap gap-2">
+                  {settings.customTables?.map((table) => {
+                    const customTableNum = (settings.customTables?.findIndex(t => t.id === table.id) || 0) + 1000;
+                    const isAssigned = assignedTables.includes(customTableNum);
+                    return (
+                      <button
+                        key={table.id}
+                        onClick={() => {
+                          if (isAssigned) {
+                            handleRemoveTable(customTableNum);
+                          } else {
+                            const newTables = [...assignedTables, customTableNum].sort((a, b) => a - b);
+                            setAssignedTables(newTables);
+                            localStorage.setItem('waiterTables', JSON.stringify(newTables));
+                            saveWaiterAssignment(waiterName, newTables);
+                          }
+                        }}
+                        className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
+                          isAssigned
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {table.name} {isAssigned ? '✓' : '+'}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
             <div className="mb-4">
               <label className="block text-gray-700 font-bold mb-2">Tisch hinzufügen</label>
               <div className="flex gap-2 mb-2">
@@ -2348,16 +2478,20 @@ export default function WaiterPage() {
                     💡 Klicke auf einen Tisch um ihn zu entfernen:
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {assignedTables.map(num => (
-                      <button
-                        key={num}
-                        onClick={() => handleRemoveTable(num)}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-bold hover:bg-red-100 hover:text-red-700 transition-colors"
-                        title={`Tisch ${num} entfernen`}
-                      >
-                        T{num} ✕
-                      </button>
-                    ))}
+                    {assignedTables.map(num => {
+                      const isCustom = num >= 1000;
+                      const customTable = isCustom ? settings.customTables?.[num - 1000] : null;
+                      return (
+                        <button
+                          key={num}
+                          onClick={() => handleRemoveTable(num)}
+                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-bold hover:bg-red-100 hover:text-red-700 transition-colors"
+                          title={`Tisch ${isCustom ? customTable?.name : num} entfernen`}
+                        >
+                          {isCustom ? customTable?.name : `T${num}`} ✕
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -2369,26 +2503,51 @@ export default function WaiterPage() {
       {/* Free Booking Modal */}
       {showFreeBookingModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-800">📝 Freie Buchung</h2>
               <button onClick={() => setShowFreeBookingModal(false)} className="text-2xl text-gray-500">✕</button>
             </div>
             <p className="text-gray-600 text-sm mb-4">
-              Bestellung für einen Tisch aufnehmen, der nicht zu deiner Liste gehört. 
-              Die Theke und der zuständige Kellner erhalten die Benachrichtigung.
+              Bestellung für einen Tisch aufnehmen, der nicht zu deiner Liste gehört.
             </p>
+            
+            {/* Custom Tables Quick Select */}
+            {(settings.customTables || []).length > 0 && (
+              <div className="mb-4">
+                <label className="block text-gray-700 font-bold mb-2">🪑 Individuelle Tische</label>
+                <div className="flex flex-wrap gap-2">
+                  {settings.customTables?.map((table) => (
+                    <button
+                      key={table.id}
+                      onClick={() => {
+                        // Use custom table - store name in a special way (negative ID based on index)
+                        const customIndex = (settings.customTables?.findIndex(t => t.id === table.id) || 0) + 1000;
+                        setFreeBookingTableNumber(customIndex);
+                      }}
+                      className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
+                        freeBookingTableNumber === ((settings.customTables?.findIndex(t => t.id === table.id) || 0) + 1000)
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {table.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="mb-4">
               <label className="block text-gray-700 font-bold mb-2">Tischnummer</label>
               <input
                 type="number"
                 min="1"
                 max="100"
-                value={freeBookingTableNumber || ''}
+                value={freeBookingTableNumber && freeBookingTableNumber < 1000 ? freeBookingTableNumber : ''}
                 onChange={(e) => setFreeBookingTableNumber(parseInt(e.target.value) || null)}
                 placeholder="Tischnummer eingeben"
                 className="w-full p-4 text-2xl text-center border-2 border-gray-300 rounded-xl text-gray-800"
-                autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleConfirmFreeBooking()}
               />
             </div>
@@ -2419,26 +2578,12 @@ export default function WaiterPage() {
         </div>
       )}
 
-      {/* Table Plan Modal */}
-      {showTablePlan && settings.tablePlanImage && (
-        <div 
-          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowTablePlan(false)}
-        >
-          <div className="relative max-w-6xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setShowTablePlan(false)}
-              className="absolute -top-12 right-0 text-white text-xl bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700"
-            >
-              ✕ Schließen
-            </button>
-            <img 
-              src={settings.tablePlanImage} 
-              alt="Tischplan" 
-              className="w-full h-full object-contain rounded-xl"
-            />
-          </div>
-        </div>
+      {/* Table Plans Modal */}
+      {showTablePlan && settings.tablePlans && (
+        <TablePlanCarousel 
+          tablePlans={settings.tablePlans}
+          onClose={() => setShowTablePlan(false)}
+        />
       )}
 
       {/* Reset Confirmation Modal */}

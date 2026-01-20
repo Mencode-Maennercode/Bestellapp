@@ -43,14 +43,29 @@ export interface PinProtection {
   };
 }
 
+export interface CustomTable {
+  id: string;
+  name: string; // Can be any string like "VIP1", "Terrasse 3", etc.
+  createdAt: number;
+}
+
 export interface AppSettings {
   language: Language;
   colors: ColorConfig;
   theken: ThekeConfig[];
-  tablePlanImage?: string; // Base64 encoded image
+  tablePlanImage?: string; // Base64 encoded image (deprecated, use tablePlans)
+  tablePlans?: TablePlan[]; // Multiple table plans with swipe support
   logo?: string; // Base64 encoded logo image
   orderAutoHideMinutes?: number; // Auto-hide orders after X minutes (0 = never)
   pinProtection?: PinProtection;
+  customTables?: CustomTable[]; // User-defined custom tables
+}
+
+export interface TablePlan {
+  id: string;
+  name: string;
+  image: string; // Base64 encoded image
+  uploadedAt: number;
 }
 
 // ============ DEFAULT VALUES ============

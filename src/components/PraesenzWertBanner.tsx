@@ -12,7 +12,8 @@ export default function PraesenzWertBanner() {
               alt="PräsenzWert" 
               width={50} 
               height={25}
-              className="hover:opacity-80 transition-opacity"
+              style={{ width: 'auto', height: 'auto' }}
+              className="hover:opacity-80 transition-opacity mix-blend-multiply"
             />
           </Link>
           <p className="text-xs text-white">
@@ -25,7 +26,7 @@ export default function PraesenzWertBanner() {
             >
               PräsenzWert
             </Link>
-            {' '}× Dorfgarde Nierendorf
+            {' '}& Dorfgarde Nierendorf
           </p>
         </div>
       </div>

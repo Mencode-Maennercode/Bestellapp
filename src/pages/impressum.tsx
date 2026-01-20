@@ -37,15 +37,21 @@ const Impressum: NextPage = () => {
             <section>
               <h2 className="text-xl font-semibold mb-3">Kontakt</h2>
               <div className="space-y-2">
-                <p><strong>Telefon:</strong> [Ihre Telefonnummer]</p>
                 <p><strong>E-Mail:</strong> Kontakt@PraesenzWert.de</p>
                 <p><strong>Webseite:</strong> www.praesenzwert.de</p>
               </div>
             </section>
             
             <section>
-              <h2 className="text-xl font-semibold mb-3">Umsatzsteuer-Identifikationsnummer</h2>
-              <p>USt-IdNr.: folgt (in Bearbeitung)</p>
+              <h2 className="text-xl font-semibold mb-3">Bereitstellung der App und Verantwortlichkeit</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Diese App wird Veranstaltern zur eigenverantwortlichen Nutzung bereitgestellt. Für Inhalte,
+                Preise, Bestellungen und die Durchführung der Veranstaltung ist der jeweilige Veranstalter
+                verantwortlich. PräsenzWert stellt ausschließlich die technische Plattform zur Verfügung.
+                Es werden durch diese App keine personenbezogenen Daten der Besteller gespeichert. Personen-
+                bezogene Daten fallen nur an, wenn freiwillig über das Kontaktfeld eine Nachricht gesendet wird
+                (Name und E-Mail) und werden ausschließlich zur Bearbeitung der Anfrage verwendet.
+              </p>
             </section>
             
             <section>

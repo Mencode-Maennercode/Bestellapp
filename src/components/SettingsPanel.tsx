@@ -13,7 +13,9 @@ import {
   verifyMasterPassword,
   verifyAdminPin,
   sendBroadcast,
-  clearBroadcast
+  clearBroadcast,
+  TablePlan,
+  CustomTable
 } from '@/lib/settings';
 
 interface SettingsPanelProps {
@@ -230,33 +232,73 @@ export default function SettingsPanel({ onSaved }: SettingsPanelProps) {
     }));
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleMultipleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     
-    if (file.size > 25 * 1024 * 1024) {
-      alert('Datei zu groß! Max. 25MB erlaubt.');
+    // Validate files
+    const oversizedFiles = files.filter(f => f.size > 25 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      alert(`${oversizedFiles.length} Datei(en) zu groß! Max. 25MB pro Datei erlaubt.`);
       return;
     }
     
-    if (!file.type.startsWith('image/')) {
-      alert('Nur Bilddateien erlaubt!');
+    const invalidFiles = files.filter(f => !f.type.startsWith('image/'));
+    if (invalidFiles.length > 0) {
+      alert(`${invalidFiles.length} Datei(en) sind keine Bilder! Nur Bilddateien erlaubt.`);
       return;
     }
     
     setImageUploading(true);
+    
     try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        setSettings(prev => ({ ...prev, tablePlanImage: base64 }));
-        setImageUploading(false);
-      };
-      reader.readAsDataURL(file);
+      const newPlans: TablePlan[] = [];
+      
+      for (const file of files) {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        
+        const newPlan: TablePlan = {
+          id: 'plan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+          name: file.name.replace(/\.[^/.]+$/, ''), // Remove file extension
+          image: base64,
+          uploadedAt: Date.now()
+        };
+        
+        newPlans.push(newPlan);
+      }
+      
+      setSettings(prev => ({
+        ...prev,
+        tablePlans: [...(prev.tablePlans || []), ...newPlans]
+      }));
+      
     } catch (err) {
       alert('Fehler beim Hochladen!');
+      console.error('Upload error:', err);
+    } finally {
       setImageUploading(false);
     }
+  };
+
+  const handleRemoveTablePlan = (planId: string) => {
+    setSettings(prev => ({
+      ...prev,
+      tablePlans: (prev.tablePlans || []).filter(p => p.id !== planId)
+    }));
+  };
+
+  const handleRenameTablePlan = (planId: string, newName: string) => {
+    setSettings(prev => ({
+      ...prev,
+      tablePlans: (prev.tablePlans || []).map(p => 
+        p.id === planId ? { ...p, name: newName } : p
+      )
+    }));
   };
 
   const handleCameraCapture = async () => {
@@ -405,6 +447,7 @@ export default function SettingsPanel({ onSaved }: SettingsPanelProps) {
       {/* Tables Tab */}
       {activeTab === 'tables' && (
         <div className="space-y-6">
+          {/* QR-Generator und Verwaltung */}
           <TablesManagementPanel />
         </div>
       )}
@@ -674,53 +717,79 @@ export default function SettingsPanel({ onSaved }: SettingsPanelProps) {
             </div>
           </div>
 
-          {/* Tischplan */}
+          {/* Table Plans Upload Section */}
           <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-            <h3 className="text-lg font-semibold mb-3">🗺️ Tischplan</h3>
+            <h3 className="text-lg font-semibold mb-3">🗺️ Tischpläne</h3>
             <input
               type="file"
               ref={fileInputRef}
-              onChange={handleImageUpload}
+              onChange={handleMultipleImageUpload}
               accept="image/*"
+              multiple
               className="hidden"
             />
-            {settings.tablePlanImage ? (
-              <div className="space-y-3">
-                <img 
-                  src={settings.tablePlanImage} 
-                  alt="Tischplan" 
-                  className="w-full h-40 object-cover rounded-lg"
-                />
-                <button
-                  onClick={handleRemoveImage}
-                  className="w-full py-2 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded-lg"
-                >
-                  🗑️ Bild entfernen
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 gap-3">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={imageUploading}
-                    className="w-full py-4 border-2 border-dashed border-slate-600 rounded-lg hover:border-slate-500 transition-colors"
-                  >
-                    {imageUploading ? 'Hochladen...' : '📁 Datei hochladen (max. 25MB)'}
-                  </button>
-                  <button
-                    onClick={handleCameraCapture}
-                    className="w-full py-4 border-2 border-dashed border-blue-600 rounded-lg hover-border-blue-500 transition-colors text-blue-400"
-                  >
-                    📸 Mit Kamera fotografieren
-                  </button>
-                </div>
-                <p className="text-xs text-slate-500 text-center">
-                  Oder fotografieren Sie den Tischplan direkt mit Ihrer Kamera
+            
+            {/* Existing Plans List */}
+            {(settings.tablePlans || []).length > 0 && (
+              <div className="space-y-3 mb-4">
+                <p className="text-sm text-slate-400">
+                  {settings.tablePlans?.length} Plan(e) hochgeladen
                 </p>
+                {settings.tablePlans?.map((plan, index) => (
+                  <div key={plan.id} className="bg-slate-700/50 rounded-lg p-3">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={plan.image} 
+                        alt={plan.name} 
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={plan.name}
+                          onChange={(e) => handleRenameTablePlan(plan.id, e.target.value)}
+                          className="w-full bg-slate-600 border border-slate-500 rounded px-2 py-1 text-sm"
+                          placeholder="Plan-Name"
+                        />
+                        <p className="text-xs text-slate-400 mt-1">
+                          Plan {index + 1} • {new Date(plan.uploadedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveTablePlan(plan.id)}
+                        className="px-3 py-2 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded-lg"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
+            
+            {/* Upload Buttons */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageUploading}
+                  className="w-full py-4 border-2 border-dashed border-slate-600 rounded-lg hover:border-slate-500 transition-colors"
+                >
+                  {imageUploading ? 'Hochladen...' : '📁 Pläne hochladen (mehrere möglich, max. 25MB pro Datei)'}
+                </button>
+                <button
+                  onClick={handleCameraCapture}
+                  className="w-full py-4 border-2 border-dashed border-blue-600 rounded-lg hover:border-blue-500 transition-colors text-blue-400"
+                >
+                  📸 Plan fotografieren
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 text-center">
+                Laden Sie mehrere Pläne hoch und wechseln Sie mit Swipe/Gesten zwischen ihnen
+              </p>
+            </div>
           </div>
+
           {/* Logo Upload Section */}
           <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
             <h3 className="text-lg font-semibold mb-3">🖼️ Logo</h3>

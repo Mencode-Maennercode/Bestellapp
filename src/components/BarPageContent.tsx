@@ -8,6 +8,7 @@ import SlidePanel from '@/components/SlidePanel';
 import SettingsPanel from '@/components/SettingsPanel';
 import StatisticsPanel from '@/components/StatisticsPanel';
 import BroadcastPanel from '@/components/BroadcastPanel';
+import TablePlanCarousel from '@/components/TablePlanCarousel';
 import { AppSettings, defaultSettings, subscribeToSettings, getWaitersForTable, WaiterAssignment, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, verifyAdminPin } from '@/lib/settings';
 
 interface Order {
@@ -243,6 +244,18 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
     return waiterAssignments
       .filter(a => a.tables && a.tables.includes(tableNum))
       .map(a => a.waiterName);
+  };
+
+  // Get display name for a table (handles both regular and custom tables)
+  const getTableName = (tableNumber: number): string => {
+    if (tableNumber >= 1000 && settings.customTables) {
+      const customIndex = tableNumber - 1000;
+      const customTable = settings.customTables[customIndex];
+      if (customTable && customTable.name) {
+        return customTable.name;
+      }
+    }
+    return `T${tableNumber}`;
   };
 
   // Filter orders by selected theke
@@ -520,12 +533,12 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {settings.tablePlanImage && (
+              {(settings.tablePlans && settings.tablePlans.length > 0) && (
                 <button
                   onClick={() => setShowTablePlan(true)}
-                  className="px-3 py-2 rounded-lg text-sm font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all"
+                  className="px-6 py-3 rounded-xl font-bold text-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all flex items-center gap-2"
                 >
-                  🗺️ Plan
+                  🗺️ Pläne
                 </button>
               )}
               <button
@@ -649,7 +662,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <span className="bar-table-number">
-                        T{order.tableNumber}
+                        {getTableName(order.tableNumber)}
                       </span>
                       {/* Show assigned waiters in parentheses */}
                       {assignedWaiters.length > 0 && (
@@ -740,6 +753,23 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
             <p className="text-sm text-gray-500 text-center mb-4">
               {window.location.origin}/kellner/{ADMIN_CODE}
             </p>
+            
+            {/* Custom Tables List */}
+            {(settings.customTables || []).length > 0 && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <h3 className="text-sm font-bold text-gray-700 mb-2">🪑 Individuelle Tische:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {settings.customTables?.map((table) => (
+                    <span key={table.id} className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+                      {table.name}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Diese Tische können im Kellner-Bereich zugeordnet werden
+                </p>
+              </div>
+            )}
             <div className="flex gap-3 mb-3">
               <button
                 onClick={() => window.open(`${window.location.origin}/kellner/${ADMIN_CODE}`, '_blank')}
@@ -937,26 +967,12 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
       {/* System Preparation Modal */}
       <SystemPrepModal isOpen={showSystemPrep} onClose={() => setShowSystemPrep(false)} />
 
-      {/* Table Plan Modal */}
-      {showTablePlan && settings.tablePlanImage && (
-        <div 
-          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowTablePlan(false)}
-        >
-          <div className="relative max-w-6xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setShowTablePlan(false)}
-              className="absolute -top-12 right-0 text-white text-xl bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700"
-            >
-              ✕ Schließen
-            </button>
-            <img 
-              src={settings.tablePlanImage} 
-              alt="Tischplan" 
-              className="w-full h-full object-contain rounded-xl"
-            />
-          </div>
-        </div>
+      {/* Table Plans Modal */}
+      {showTablePlan && settings.tablePlans && (
+        <TablePlanCarousel 
+          tablePlans={settings.tablePlans}
+          onClose={() => setShowTablePlan(false)}
+        />
       )}
 
       

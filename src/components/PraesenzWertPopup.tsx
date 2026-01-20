@@ -66,7 +66,7 @@ export default function PraesenzWertPopup({ onClose }: PraesenzWertPopupProps) {
               alt="PräsenzWert" 
               width={60} 
               height={30}
-              className="bg-white rounded px-2 py-1"
+              className="rounded"
             />
           </div>
           <h2 className="text-2xl font-bold">Wie gefällt dir die App?</h2>
@@ -115,8 +115,8 @@ export default function PraesenzWertPopup({ onClose }: PraesenzWertPopupProps) {
 
               {/* Optional Contact Fields */}
               <div className="border-t pt-4">
-                <p className="text-xs text-gray-500 mb-3 text-center">
-                  Optional: Möchtest du kontaktiert werden?
+                <p className="text-xs text-gray-600 mb-3 text-center">
+                  Interesse die App bei deiner Veranstaltung selbst zu nutzen? Oder Interesse an eigener Software-Lösung? Gehe mit uns in Kontakt.
                 </p>
                 
                 <input

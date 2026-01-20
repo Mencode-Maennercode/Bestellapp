@@ -19,6 +19,8 @@ export default function QRCodesPrintPanel({ baseUrl = '' }: QRCodesPrintPanelPro
   const [startTable, setStartTable] = useState(1);
   const [endTable, setEndTable] = useState(44);
   const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTable, setCurrentTable] = useState(0);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,9 +39,13 @@ export default function QRCodesPrintPanel({ baseUrl = '' }: QRCodesPrintPanelPro
 
   const generateQRCodes = async () => {
     setGenerating(true);
+    setProgress(0);
+    setCurrentTable(0);
     const newTables: TableQR[] = [];
+    const totalTables = endTable - startTable + 1;
     
     for (let i = startTable; i <= endTable; i++) {
+      setCurrentTable(i);
       const code = `T${i.toString().padStart(3, '0')}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
       const url = `${baseUrl || window.location.origin}/tisch/${code}`;
       
@@ -61,10 +67,15 @@ export default function QRCodesPrintPanel({ baseUrl = '' }: QRCodesPrintPanelPro
       } catch (err) {
         console.error(`Error generating QR for table ${i}:`, err);
       }
+      
+      // Update progress
+      const currentProgress = Math.round(((i - startTable + 1) / totalTables) * 100);
+      setProgress(currentProgress);
     }
     
     setTables(newTables);
     setGenerating(false);
+    setCurrentTable(0);
   };
 
   const handlePrint = () => {
@@ -210,6 +221,22 @@ export default function QRCodesPrintPanel({ baseUrl = '' }: QRCodesPrintPanelPro
         >
           {generating ? 'Generiere...' : '🔄 QR-Codes generieren'}
         </button>
+        
+        {/* Progress Bar */}
+        {generating && (
+          <div className="mt-4">
+            <div className="flex justify-between text-sm text-slate-400 mb-2">
+              <span>Tisch {currentTable} wird verarbeitet...</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-2">
+              <div 
+                className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Preview */}

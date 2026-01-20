@@ -130,7 +130,7 @@ export default function TablePage() {
       }, 1000); // Show after 1 second
       return () => clearTimeout(timer);
     } else {
-      // For real tables: show every 2 hours
+      // For real tables: show every 2 hours of real time, regardless of page open time
       const shouldShowPopup = () => {
         if (!lastPopupTime) return true;
         return now - parseInt(lastPopupTime, 10) >= TWO_HOURS;
@@ -140,7 +140,7 @@ export default function TablePage() {
         const timer = setTimeout(() => {
           setShowPraesenzWertPopup(true);
           localStorage.setItem('lastPraesenzWertPopup', now.toString());
-        }, TWO_HOURS); // Show after 2 hours on the page
+        }, 1000); // Show after 1 second on page load
 
         return () => clearTimeout(timer);
       }

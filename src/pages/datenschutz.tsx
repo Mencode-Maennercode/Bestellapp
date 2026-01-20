@@ -58,7 +58,15 @@ const Datenschutz: NextPage = () => {
                   <p className="text-sm text-gray-600 leading-relaxed mt-2">
                     <strong>Datenverarbeitungszweck:</strong> Verarbeitung von Bestellungen in Echtzeit<br/>
                     <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)<br/>
-                    <strong>Speicherdauer:</strong> Bestellungen werden nach 24 Stunden automatisch gelöscht
+                    <strong>Speicherdauer:</strong> Bestellungen werden nach 3 Tagen automatisch gelöscht
+                  </p>
+                  <p className="text-sm text-gray-600 leading-relaxed mt-2">
+                    Diese App wird Veranstaltern zur eigenverantwortlichen Nutzung bereitgestellt. Für Inhalte,
+                    Preise, Bestellungen und die Durchführung der Veranstaltung ist der jeweilige Veranstalter
+                    verantwortlich. PräsenzWert stellt ausschließlich die technische Plattform bereit. Es werden
+                    durch diese App keine personenbezogenen Daten der Besteller gespeichert. Personenbezogene
+                    Daten fallen nur an, wenn Sie freiwillig über das Kontaktfeld eine Nachricht senden (Name und
+                    E-Mail).
                   </p>
                 </div>
               </div>
@@ -95,7 +103,9 @@ const Datenschutz: NextPage = () => {
               <p className="text-sm text-gray-600 leading-relaxed">
                 Bestelldaten werden für 3 Tage gespeichert und können als Excel-Statistik exportiert werden. 
                 Nach 3 Tagen werden die Daten automatisch gelöscht. Es findet keine dauerhafte Speicherung 
-                personenbezogener Daten statt.
+                personenbezogener Daten statt. Personenbezogene Daten (optional Name und E-Mail) fallen nur
+                bei freiwilliger Kontaktaufnahme über das Kontaktfeld an und werden ausschließlich zur
+                Bearbeitung der Anfrage verwendet.
               </p>
             </section>
             
@@ -107,7 +117,6 @@ const Datenschutz: NextPage = () => {
                 <p>Josef-Martin-Weg 4</p>
                 <p>53501 Grafschaft</p>
                 <p>E-Mail: Kontakt@PraesenzWert.de</p>
-                <p>Telefon: [Ihre Telefonnummer]</p>
               </div>
             </section>
             
@@ -187,23 +196,7 @@ const Datenschutz: NextPage = () => {
               </p>
             </section>
             
-            <section>
-              <h2 className="text-xl font-semibold mb-3">15. Beschwerderecht bei der Aufsichtsbehörde</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Im Falle von Verstößen gegen die DSGVO steht den Betroffenen ein Beschwerderecht bei einer 
-                Aufsichtsbehörde, insbesondere in dem Mitgliedstaat ihres gewöhnlichen Aufenthalts, ihres 
-                Arbeitsplatzes oder des Orts des mutmaßlichen Verstoßes zu. Das Beschwerderecht besteht 
-                unbeschadet anderweitiger verwaltungsrechtlicher oder gerichtlicher Rechtsbehelfe.
-              </p>
-              <p className="text-sm text-gray-600 leading-relaxed mt-2">
-                <strong>Zuständige Aufsichtsbehörde:</strong><br/>
-                Die Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen<br/>
-                Kavalleriestraße 2-4<br/>
-                40213 Düsseldorf<br/>
-                Telefon: 0211/38424-0<br/>
-                E-Mail: poststelle@ldi.nrw.de
-              </p>
-            </section>
+            
             
             <section>
               <h2 className="text-xl font-semibold mb-3">16. Recht auf Datenübertragbarkeit</h2>

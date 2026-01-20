@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
-import { AppSettings, defaultSettings, getSettings } from '@/lib/settings';
+import { AppSettings, defaultSettings, getSettings, saveSettings, CustomTable } from '@/lib/settings';
 import { 
   createTables, 
   deleteAllTables, 
   getAllTables, 
-  type Table 
+  type Table,
+  generateUniqueTableCode,
+  TABLES_PATH
 } from '@/lib/dynamicTables';
+import { database } from '@/lib/firebase';
+import { ref, set as fbSet } from 'firebase/database';
 import TablePreviewModal from './TablePreviewModal';
 
 interface TablesManagementPanelProps {
@@ -17,6 +21,7 @@ interface TableQR {
   tableNumber: number;
   code: string;
   qrDataUrl: string;
+  customName?: string;
 }
 
 export default function TablesManagementPanel({ baseUrl = '' }: TablesManagementPanelProps) {
@@ -27,9 +32,10 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
   // Dynamic table management state
   const [tableCount, setTableCount] = useState<string>('');
   const [currentTables, setCurrentTables] = useState<Table[]>([]);
-  const [dynamicQRCodes, setDynamicQRCodes] = useState<{ tableNumber: number; code: string; qrDataUrl: string }[]>([]);
+  const [dynamicQRCodes, setDynamicQRCodes] = useState<TableQR[]>([]);
   const [showDynamicQRs, setShowDynamicQRs] = useState(false);
   const [showTablePreview, setShowTablePreview] = useState(false);
+  const [newCustomTableName, setNewCustomTableName] = useState('');
 
   // Tab management removed – single section view
 
@@ -48,6 +54,61 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
       console.error('Error loading settings:', err);
     }
     setLoading(false);
+  };
+
+  // Ensure custom tables exist in DB with 4-char codes and return their info
+  const ensureCustomTableEntries = async (): Promise<{ number: number; code: string; name: string }[]> => {
+    const result: { number: number; code: string; name: string }[] = [];
+    const existing = await getAllTables();
+    for (let i = 0; i < (settings.customTables || []).length; i++) {
+      const ct = (settings.customTables || [])[i];
+      const index = i;
+      const num = 1000 + index;
+      let table = existing.find(t => t.number === num);
+      if (!table) {
+        const code = await generateUniqueTableCode(); // 4-char like A12B
+        const id = `custom_${ct.id}`;
+        const data: Table = {
+          id,
+          number: num,
+          code,
+          createdAt: Date.now(),
+          isActive: true
+        } as Table;
+        await fbSet(ref(database, `${TABLES_PATH}/${id}`), data);
+        table = data;
+      }
+      result.push({ number: num, code: table.code, name: ct.name });
+    }
+    return result;
+  };
+
+  const handleAddCustomTable = async () => {
+    if (!newCustomTableName.trim()) return;
+    const newTable: CustomTable = {
+      id: 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+      name: newCustomTableName.trim(),
+      createdAt: Date.now()
+    };
+    const updatedSettings = {
+      ...settings,
+      customTables: [...(settings.customTables || []), newTable]
+    };
+    setSettings(updatedSettings);
+    setNewCustomTableName('');
+    // Auto-save immediately
+    try {
+      await saveSettings(updatedSettings);
+    } catch (err) {
+      console.error('Error auto-saving custom table:', err);
+    }
+  };
+
+  const handleRemoveCustomTable = (tableId: string) => {
+    setSettings(prev => ({
+      ...prev,
+      customTables: (prev.customTables || []).filter(t => t.id !== tableId)
+    }));
   };
 
   // Dynamic table management
@@ -92,7 +153,29 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
         })
       );
       
-      setDynamicQRCodes(qrData);
+      // Add custom tables with 4-char codes to QR codes
+      const ensuredCustom = await ensureCustomTableEntries();
+      const customTableQRs = await Promise.all(
+        ensuredCustom.map(async (ct) => {
+          const tableUrl = `${baseUrl}/tisch/${ct.code}`;
+          const qrDataUrl = await QRCode.toDataURL(tableUrl, {
+            width: 150,
+            margin: 2,
+            color: {
+              dark: settings.colors?.primaryTisch || '#009640',
+              light: '#FFFFFF'
+            }
+          });
+          return {
+            tableNumber: ct.number,
+            code: ct.code,
+            qrDataUrl,
+            customName: ct.name
+          };
+        })
+      );
+      
+      setDynamicQRCodes([...qrData, ...customTableQRs]);
       setShowDynamicQRs(true);
       
       alert(`✅ Erfolgreich ${count} neue Tische generiert!`);
@@ -153,10 +236,32 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
         })
       );
       
-      setDynamicQRCodes(qrData);
+      // Add custom tables with 4-char codes to QR codes
+      const ensuredCustom = await ensureCustomTableEntries();
+      const customTableQRs = await Promise.all(
+        ensuredCustom.map(async (ct) => {
+          const tableUrl = `${baseUrl}/tisch/${ct.code}`;
+          const qrDataUrl = await QRCode.toDataURL(tableUrl, {
+            width: 150,
+            margin: 2,
+            color: {
+              dark: settings.colors?.primaryTisch || '#009640',
+              light: '#FFFFFF'
+            }
+          });
+          return {
+            tableNumber: ct.number,
+            code: ct.code,
+            qrDataUrl,
+            customName: ct.name
+          };
+        })
+      );
+      
+      setDynamicQRCodes([...qrData, ...customTableQRs]);
       setShowDynamicQRs(true);
       
-      alert(`✅ QR-Codes für ${currentTables.length} Tische bereit zum Drucken!`);
+      alert(`✅ QR-Codes für ${currentTables.length + (settings.customTables?.length || 0)} Tische bereit zum Drucken!`);
     } catch (error) {
       console.error('Failed to generate QR codes:', error);
       alert('❌ Fehler beim Generieren der QR-Codes');
@@ -291,7 +396,7 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
                   <img class="logo" src="${logoUrl}" alt="Logo" />
                 </div>
                 <div class="table-label">Tisch</div>
-                <div class="table-number">${qr.tableNumber}</div>
+                <div class="table-number">${qr.customName || qr.tableNumber}</div>
                 <img class="qr-image" src="${qr.qrDataUrl}" alt="QR Code" />
                 <div class="scan-text">📱 Scannen zum Bestellen</div>
                 <div class="footer-text">Fastelovend 2026</div>
@@ -376,56 +481,109 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
               </div>
               <div className="text-center p-4 bg-slate-700/50 rounded-lg">
                 <div className="text-2xl font-bold text-purple-400">
-                  {currentTables.length > 0 ? Math.min(...currentTables.map(t => t.number)) : 0} - {currentTables.length > 0 ? Math.max(...currentTables.map(t => t.number)) : 0}
+                  {(() => {
+                    const normalTables = currentTables.filter(t => t.number < 1000);
+                    return normalTables.length > 0 
+                      ? `${Math.min(...normalTables.map(t => t.number))} - ${Math.max(...normalTables.map(t => t.number))}`
+                      : 'Keine normalen Tische';
+                  })()}
                 </div>
-                <div className="text-sm text-slate-400">Tisch-Nummern</div>
+                <div className="text-sm text-slate-400">Tische</div>
               </div>
             </div>
           </div>
 
-          {!showDynamicQRs ? (
-            <>
-              {/* Generate New Tables */}
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <h3 className="text-lg font-semibold mb-3 text-green-400">🆕 Neue Tische generieren</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Anzahl der Tische (1-100):
-                    </label>
-                    <input
-                      type="number"
-                      value={tableCount}
-                      onChange={(e) => setTableCount(e.target.value)}
-                      min="1"
-                      max="100"
-                      className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
-                      placeholder="z.B. 44"
-                    />
-                  </div>
-                  
-                  <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3">
-                    <p className="text-sm text-yellow-400">
-                      <span className="font-semibold">⚠️ Achtung:</span> Beim Generieren neuer Tische werden alle alten Tische und deren QR-Codes ungültig!
-                    </p>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={generateNewTables}
-                      disabled={generating}
-                      className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:bg-gray-600 transition-colors"
-                    >
-                      {generating ? '🔄 Generiere...' : '🆕 Neue Tische generieren'}
-                    </button>
-                  </div>
-                </div>
+          {/* Generate New Tables */}
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+            <h3 className="text-lg font-semibold mb-3 text-green-400">🆕 Neue Tische generieren</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Anzahl der Tische (1-100):
+                </label>
+                <input
+                  type="number"
+                  value={tableCount}
+                  onChange={(e) => setTableCount(e.target.value)}
+                  min="1"
+                  max="100"
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-white"
+                  placeholder="z.B. 44"
+                />
+              </div>
+              
+              <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-3">
+                <p className="text-sm text-yellow-400">
+                  <span className="font-semibold">⚠️ Achtung:</span> Beim Generieren neuer Tische werden alle alten Tische und deren QR-Codes ungültig!
+                </p>
               </div>
 
+              <div className="flex gap-3">
+                <button
+                  onClick={generateNewTables}
+                  disabled={generating}
+                  className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:bg-gray-600 transition-colors"
+                >
+                  {generating ? '🔄 Generiere...' : '🆕 Neue Tische generieren'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Individual Tables */}
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+            <h3 className="text-lg font-semibold mb-3">🪑 Individuelle Tische</h3>
+            <p className="text-sm text-slate-400 mb-3">
+              Zusätzliche Tische mit eigenen Namen (z.B. "VIP1", "Terrasse 3", "Theke")
+            </p>
+            
+            {/* Add new custom table input */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={newCustomTableName}
+                onChange={(e) => setNewCustomTableName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddCustomTable()}
+                placeholder="Tischname eingeben..."
+                className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm"
+              />
+              <button
+                onClick={handleAddCustomTable}
+                disabled={!newCustomTableName.trim()}
+                className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-slate-600 disabled:text-slate-400 rounded-lg font-medium text-sm transition-colors"
+              >
+                + Hinzufügen
+              </button>
+            </div>
+            
+            {/* Existing custom tables */}
+            {(settings.customTables || []).length > 0 ? (
+              <div className="space-y-2">
+                {settings.customTables?.map((table) => (
+                  <div key={table.id} className="flex items-center justify-between bg-slate-700/50 rounded-lg px-3 py-2">
+                    <span className="font-medium">{table.name}</span>
+                    <button
+                      onClick={() => handleRemoveCustomTable(table.id)}
+                      className="px-2 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded text-sm"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-4">
+                Noch keine individuellen Tische angelegt
+              </p>
+            )}
+          </div>
+
+          {!showDynamicQRs ? (
+            <>
               {/* Reprint Existing Tables */}
               {currentTables.length > 0 && (
                 <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                  <h3 className="text-lg font-semibold mb-3 text-purple-400">🖨️ QR-Codes erneut drucken</h3>
+                  <h3 className="text-lg font-semibold mb-3 text-purple-400">🖨️ QR Code neu drucken</h3>
                   <p className="text-slate-300 mb-4">
                     Generiere die QR-Codes für alle {currentTables.length} bestehenden Tische erneut zum Drucken.
                   </p>
@@ -439,7 +597,34 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
                 </div>
               )}
 
-              {/* Delete section moved below Demo block */}
+              {/* Demo preview */}
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                <h3 className="text-lg font-semibold mb-3 text-teal-400">👁️ tisch demo</h3>
+                <p className="text-slate-300 mb-4">
+                  Öffnet den Demo-Tisch zum Testen der Bestellfunktion.
+                </p>
+                <button
+                  onClick={() => window.open(`${window.location.origin}/tisch/DEMO123`, '_blank')}
+                  className="w-full px-6 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-all"
+                >
+                  🪑 Demo-Tisch öffnen
+                </button>
+              </div>
+
+              {/* Delete All Tables */}
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                <h3 className="text-lg font-semibold mb-3 text-red-400">🗑️ tisch löschen</h3>
+                <p className="text-slate-300 mb-4">
+                  Löscht alle aktuellen Tische und ihre QR-Codes. Diese Aktion kann nicht rückgängig gemacht werden!
+                </p>
+                <button
+                  onClick={deleteAllTablesAndReset}
+                  disabled={generating || currentTables.length === 0}
+                  className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 disabled:bg-gray-600 transition-colors"
+                >
+                  🗑️ Alle Tische löschen
+                </button>
+              </div>
             </>
           ) : (
             /* QR Codes Display */
@@ -466,8 +651,8 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-96 overflow-y-auto">
                   {dynamicQRCodes.map((qr) => (
                     <div key={qr.tableNumber} className="text-center border border-slate-600 rounded-lg p-3">
-                      <div className="font-bold text-slate-300 mb-2">Tisch {qr.tableNumber}</div>
-                      <img src={qr.qrDataUrl} alt={`QR Code for Table ${qr.tableNumber}`} className="mx-auto mb-2" />
+                      <div className="font-bold text-slate-300 mb-2">Tisch {qr.customName || qr.tableNumber}</div>
+                      <img src={qr.qrDataUrl} alt={`QR Code for Table ${qr.customName || qr.tableNumber}`} className="mx-auto mb-2" />
                       <div className="text-xs text-slate-500 font-mono">{qr.code}</div>
                     </div>
                   ))}
@@ -492,34 +677,6 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
           )}
       </div>
 
-      {/* Demo preview moved into Manage section */}
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-          <h3 className="text-lg font-semibold mb-3 text-teal-400">👁️ Tisch-Demo</h3>
-          <p className="text-slate-300 mb-4">
-            Öffnet den Demo-Tisch zum Testen der Bestellfunktion.
-          </p>
-          <button
-            onClick={() => window.open(`${window.location.origin}/tisch/DEMO123`, '_blank')}
-            className="w-full px-6 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-all"
-          >
-            🪑 Demo-Tisch öffnen
-          </button>
-        </div>
-
-      {/* Delete All Tables - moved to the bottom */}
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-          <h3 className="text-lg font-semibold mb-3 text-red-400">🗑️ Alle Tische löschen</h3>
-          <p className="text-slate-300 mb-4">
-            Löscht alle aktuellen Tische und ihre QR-Codes. Diese Aktion kann nicht rückgängig gemacht werden!
-          </p>
-          <button
-            onClick={deleteAllTablesAndReset}
-            disabled={generating || currentTables.length === 0}
-            className="w-full px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 disabled:bg-gray-600 transition-colors"
-          >
-            🗑️ Alle Tische löschen
-          </button>
-        </div>
 
       {/* Info (entfernt: QR-Druck Hinweise) */}
 

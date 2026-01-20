@@ -12,6 +12,8 @@ export default function QRCodesPage() {
   const [tableQRs, setTableQRs] = useState<TableQR[]>([]);
   const [baseUrl, setBaseUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTable, setCurrentTable] = useState(0);
 
   useEffect(() => {
     // Set default base URL from current location
@@ -24,10 +26,15 @@ export default function QRCodesPage() {
     if (!baseUrl) return;
     
     setIsGenerating(true);
+    setProgress(0);
+    setCurrentTable(0);
     const tables = getAllTableCodes();
     const qrs: TableQR[] = [];
+    const totalTables = tables.length;
 
-    for (const table of tables) {
+    for (let i = 0; i < tables.length; i++) {
+      const table = tables[i];
+      setCurrentTable(table.tableNumber);
       const url = `${baseUrl}/tisch/${table.code}`;
       const dataUrl = await QRCode.toDataURL(url, {
         width: 300,
@@ -42,10 +49,15 @@ export default function QRCodesPage() {
         code: table.code,
         dataUrl,
       });
+      
+      // Update progress
+      const currentProgress = Math.round(((i + 1) / totalTables) * 100);
+      setProgress(currentProgress);
     }
 
     setTableQRs(qrs);
     setIsGenerating(false);
+    setCurrentTable(0);
   };
 
   const printAll = () => {
@@ -88,6 +100,22 @@ export default function QRCodesPage() {
               </button>
             )}
           </div>
+          
+          {/* Progress Bar */}
+          {isGenerating && (
+            <div className="mt-4 bg-white/10 rounded-xl p-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span>Tisch {currentTable} wird verarbeitet...</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="w-full bg-white/20 rounded-full h-2">
+                <div 
+                  className="bg-white h-2 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
