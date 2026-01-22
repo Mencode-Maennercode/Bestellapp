@@ -72,13 +72,25 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
           id,
           number: num,
           code,
+          name: ct.name, // Save readable name to database
           createdAt: Date.now(),
           isActive: true
         } as Table;
         await fbSet(ref(database, `${TABLES_PATH}/${id}`), data);
         table = data;
+      } else if (!table.name && table.id.startsWith('custom_')) {
+        // Update existing table to include name if missing
+        const settingsTableId = table.id.replace('custom_', '');
+        const settingsTable = (settings.customTables || []).find(st => st.id === settingsTableId);
+        if (settingsTable) {
+          await fbSet(ref(database, `${TABLES_PATH}/${table.id}`), {
+            ...table,
+            name: settingsTable.name
+          });
+          table.name = settingsTable.name;
+        }
       }
-      result.push({ number: num, code: table.code, name: ct.name });
+      result.push({ number: num, code: table.code, name: table.name || ct.name });
     }
     return result;
   };
@@ -90,18 +102,47 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
       name: newCustomTableName.trim(),
       createdAt: Date.now()
     };
+    
+    // Add to settings first
     const updatedSettings = {
       ...settings,
       customTables: [...(settings.customTables || []), newTable]
     };
     setSettings(updatedSettings);
-    setNewCustomTableName('');
-    // Auto-save immediately
+    
+    // Immediately create database entry with unique code
+    try {
+      const existingTables = await getAllTables();
+      const nextCustomNumber = 1000 + (settings.customTables || []).length;
+      const code = await generateUniqueTableCode();
+      const dbId = `custom_${newTable.id}`;
+      
+      const tableData: Table = {
+        id: dbId,
+        number: nextCustomNumber,
+        code,
+        name: newTable.name,
+        createdAt: Date.now(),
+        isActive: true
+      };
+      
+      await fbSet(ref(database, `${TABLES_PATH}/${dbId}`), tableData);
+      
+      // Reload current tables to show the new one immediately
+      await loadCurrentTables();
+      
+    } catch (err) {
+      console.error('Error creating custom table in database:', err);
+    }
+    
+    // Save settings
     try {
       await saveSettings(updatedSettings);
     } catch (err) {
-      console.error('Error auto-saving custom table:', err);
+      console.error('Error saving custom table settings:', err);
     }
+    
+    setNewCustomTableName('');
   };
 
   const handleRemoveCustomTable = async (tableId: string) => {
@@ -345,13 +386,6 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
             object-fit: cover;
             border: 3px solid ${primaryColor};
           }
-          .table-number {
-            font-size: 56px;
-            font-weight: 900;
-            color: ${primaryColor};
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            line-height: 1;
-          }
           .table-label {
             font-size: 18px;
             font-weight: 600;
@@ -360,9 +394,22 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
             letter-spacing: 3px;
             margin-bottom: -5px;
           }
+          .table-number {
+            font-size: 56px;
+            font-weight: 900;
+            color: ${primaryColor};
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            line-height: 1;
+          }
+          .table-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+          }
           .qr-image {
-            width: 140px;
-            height: 140px;
+            width: 280px;
+            height: 280px;
             margin: 8px 0;
             border-radius: 8px;
             border: 3px solid ${primaryColor};
@@ -412,8 +459,9 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
                 <div class="logo-container">
                   <img class="logo" src="${logoUrl}" alt="Logo" />
                 </div>
-                <div class="table-label">Tisch</div>
-                <div class="table-number">${qr.customName || qr.tableNumber}</div>
+                <div class="table-header">
+                  <div class="table-number">${qr.customName || qr.tableNumber}</div>
+                </div>
                 <img class="qr-image" src="${qr.qrDataUrl}" alt="QR Code" />
                 <div class="scan-text">📱 Scannen zum Bestellen</div>
                 <div class="footer-text">Fastelovend 2026</div>
@@ -574,25 +622,67 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
             </div>
             
             {/* Existing custom tables */}
-            {(settings.customTables || []).length > 0 ? (
-              <div className="space-y-2">
-                {settings.customTables?.map((table) => (
-                  <div key={table.id} className="flex items-center justify-between bg-slate-700/50 rounded-lg px-3 py-2">
-                    <span className="font-medium">{table.name}</span>
-                    <button
-                      onClick={() => handleRemoveCustomTable(table.id)}
-                      className="px-2 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded text-sm"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500 text-center py-4">
-                Noch keine individuellen Tische angelegt
-              </p>
-            )}
+            {(() => {
+              const customTablesFromDB = currentTables.filter(t => t.number >= 1000);
+              const customTablesFromSettings = settings.customTables || [];
+              
+              if (customTablesFromDB.length === 0 && customTablesFromSettings.length === 0) {
+                return (
+                  <p className="text-sm text-slate-500 text-center py-4">
+                    Noch keine individuellen Tische angelegt
+                  </p>
+                );
+              }
+
+              return (
+                <div className="space-y-2">
+                  {/* Show tables from database (number >= 1000) */}
+                  {customTablesFromDB.map((table) => {
+                    // Use name from database if available, otherwise fallback to settings
+                    const settingsTable = customTablesFromSettings.find(st => st.id === table.id.replace('custom_', ''));
+                    // For custom tables (>= 1000), show readable name, otherwise show "Tisch {number}"
+                    const displayName = table.number >= 1000 
+                      ? (table.name || settingsTable?.name || `Tisch ${table.number}`)
+                      : `Tisch ${table.number}`;
+                    
+                    return (
+                      <div key={table.id} className="flex items-center justify-between bg-slate-700/50 rounded-lg px-3 py-2">
+                        <div className="flex-1">
+                          <span className="font-medium">{displayName}</span>
+                          <span className="text-xs text-slate-400 ml-2">({table.code})</span>
+                        </div>
+                        {table.number >= 1000 && (
+                          <button
+                            onClick={() => handleRemoveCustomTable(table.id.replace('custom_', ''))}
+                            className="px-2 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded text-sm"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Show tables from settings that might not be in DB yet */}
+                  {customTablesFromSettings
+                    .filter(st => !customTablesFromDB.find(db => db.id === `custom_${st.id}`))
+                    .map((table) => (
+                      <div key={table.id} className="flex items-center justify-between bg-slate-700/50 rounded-lg px-3 py-2">
+                        <div className="flex-1">
+                          <span className="font-medium">{table.name}</span>
+                          <span className="text-xs text-slate-400 ml-2">(noch nicht in DB)</span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveCustomTable(table.id)}
+                          className="px-2 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded text-sm"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              );
+            })()}
           </div>
 
           {!showDynamicQRs ? (

@@ -1249,13 +1249,13 @@ export default function WaiterPage() {
                 <p className="text-red-400 text-sm mb-3">{tableInputError}</p>
               )}
               
-              {assignedTables.filter(num => num < 1000).length > 0 && (
+              {assignedTables.filter(num => num >= 1).length > 0 && (
                 <div>
                   <p className="text-xs text-slate-400 mb-2">
                     💡 Klicke auf einen Tisch um ihn zu entfernen:
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {assignedTables.filter(num => num < 1000).map(num => (
+                    {assignedTables.filter(num => num >= 1).map(num => (
                       <button
                         key={num}
                         onClick={() => handleRemoveTable(num)}

@@ -6,6 +6,7 @@ export interface Table {
   id: string;
   number: number;
   code: string;
+  name?: string; // Only used for custom tables (number >= 1000) - readable name like "26a"
   createdAt: number;
   isActive: boolean;
 }
