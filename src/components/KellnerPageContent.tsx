@@ -1468,7 +1468,7 @@ export default function WaiterPage() {
             <div>
               <h1 className="text-xl font-bold">👤 {waiterName}</h1>
               <p className="text-sm opacity-80">
-                Tische: {assignedTables.length > 0 ? assignedTables.join(', ') : 'Keine Tische zugewiesen'}
+                Tische: {assignedTables.length > 0 ? assignedTables.map(t => getTableNameSync(t)).join(', ') : 'Keine Tische zugewiesen'}
               </p>
             </div>
             <button
