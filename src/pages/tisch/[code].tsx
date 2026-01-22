@@ -117,12 +117,22 @@ export default function TablePage() {
     }
   }, []);
 
-  // PräsenzWert popup timer - show on every refresh for demo table, every 2 hours for real tables
+  // PräsenzWert popup timer - show 1h after first open, then 1.5h later
   useEffect(() => {
     const isDemoTable = code === 'DEMO123';
-    const TWO_HOURS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-    const lastPopupTime = localStorage.getItem('lastPraesenzWertPopup');
+    const ONE_HOUR = 1 * 60 * 60 * 1000; // 1 hour in milliseconds
+    const ONE_AND_HALF_HOURS = 1.5 * 60 * 60 * 1000; // 1.5 hours in milliseconds
     const now = Date.now();
+    
+    // Get first open time and popup count from localStorage
+    const firstOpenTime = localStorage.getItem('firstOpenTime');
+    const lastPopupTime = localStorage.getItem('lastPraesenzWertPopup');
+    const popupCount = parseInt(localStorage.getItem('praesenzWertPopupCount') || '0', 10);
+    
+    // Set first open time if not exists
+    if (!firstOpenTime) {
+      localStorage.setItem('firstOpenTime', now.toString());
+    }
     
     if (isDemoTable) {
       // For demo table: show immediately on every page load
@@ -131,16 +141,27 @@ export default function TablePage() {
       }, 1000); // Show after 1 second
       return () => clearTimeout(timer);
     } else {
-      // For real tables: show every 2 hours of real time, regardless of page open time
+      // For real tables: check timing logic
+      const firstOpen = parseInt(firstOpenTime || now.toString(), 10);
+      const lastPopup = lastPopupTime ? parseInt(lastPopupTime, 10) : 0;
+      
       const shouldShowPopup = () => {
-        if (!lastPopupTime) return true;
-        return now - parseInt(lastPopupTime, 10) >= TWO_HOURS;
+        // First popup: 1 hour after first open
+        if (popupCount === 0 && (now - firstOpen) >= ONE_HOUR) {
+          return true;
+        }
+        // Second popup: 1.5 hours after first popup
+        if (popupCount === 1 && (now - lastPopup) >= ONE_AND_HALF_HOURS) {
+          return true;
+        }
+        return false;
       };
 
       if (shouldShowPopup()) {
         const timer = setTimeout(() => {
           setShowPraesenzWertPopup(true);
           localStorage.setItem('lastPraesenzWertPopup', now.toString());
+          localStorage.setItem('praesenzWertPopupCount', (popupCount + 1).toString());
         }, 1000); // Show after 1 second on page load
 
         return () => clearTimeout(timer);
