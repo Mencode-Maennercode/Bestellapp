@@ -1402,7 +1402,7 @@ export default function WaiterPage() {
               NEUE BESTELLUNG!
             </h1>
             <div className="text-6xl font-black text-gray-900 mb-4">
-              Tisch {newOrderAlert.tableNumber}
+              {getTableNameSync(newOrderAlert.tableNumber)}
             </div>
             {newOrderAlert.type === 'waiter_call' ? (
               <p className="text-2xl text-orange-600 font-bold">🙋 Kellner gerufen!</p>
