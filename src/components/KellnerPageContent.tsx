@@ -1383,7 +1383,7 @@ export default function WaiterPage() {
       {/* FULL SCREEN ALARM ALERT - Flashing! */}
       {alarmActive && newOrderAlert && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-pulse"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-pulse"
           style={{ 
             background: 'linear-gradient(45deg, #ff0000, #ff6600, #ff0000)',
             animation: 'flash 0.5s infinite alternate'
