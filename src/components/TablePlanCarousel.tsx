@@ -1,10 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { TablePlan } from '@/lib/settings';
 
 interface TablePlanCarouselProps {
   tablePlans: TablePlan[];
   onClose: () => void;
 }
+
+// Helper to detect mobile device
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+};
 
 export default function TablePlanCarousel({ tablePlans, onClose }: TablePlanCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -14,9 +20,16 @@ export default function TablePlanCarousel({ tablePlans, onClose }: TablePlanCaro
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [favoritePlanId, setFavoritePlanId] = useState<string | null>(null);
   const [swipeStart, setSwipeStart] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [lastPinchDistance, setLastPinchDistance] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load favorite plan from localStorage
+  // Detect mobile device
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
+
+  // Load favorite plan and saved zoom level from localStorage
   useEffect(() => {
     const savedFavorite = localStorage.getItem('favoritePlanId');
     if (savedFavorite) {
@@ -26,13 +39,56 @@ export default function TablePlanCarousel({ tablePlans, onClose }: TablePlanCaro
         setCurrentIndex(favoriteIndex);
       }
     }
+    
+    // Load saved zoom level for mobile
+    if (isMobileDevice()) {
+      const savedZoom = localStorage.getItem('tablePlanZoomLevel');
+      if (savedZoom) {
+        const zoomValue = parseFloat(savedZoom);
+        if (!isNaN(zoomValue) && zoomValue >= 0.5 && zoomValue <= 3) {
+          setScale(zoomValue);
+        }
+      }
+    }
   }, [tablePlans]);
 
-  // Reset zoom when changing plans
+  // Reset position when changing plans (but keep zoom level on mobile)
   useEffect(() => {
+    if (!isMobile) {
+      setScale(1);
+    }
+    setPosition({ x: 0, y: 0 });
+  }, [currentIndex, isMobile]);
+
+  // Save zoom level to localStorage when it changes (mobile only)
+  useEffect(() => {
+    if (isMobile) {
+      localStorage.setItem('tablePlanZoomLevel', scale.toString());
+    }
+  }, [scale, isMobile]);
+
+  // Zoom control functions
+  const handleZoomIn = useCallback(() => {
+    setScale(prev => Math.min(prev * 1.3, 3));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    const newScale = scale * 0.7;
+    if (newScale <= 1) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+    } else {
+      setScale(newScale);
+    }
+  }, [scale]);
+
+  const handleResetZoom = useCallback(() => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
-  }, [currentIndex]);
+    if (isMobile) {
+      localStorage.setItem('tablePlanZoomLevel', '1');
+    }
+  }, [isMobile]);
 
   const handleSetFavorite = (planId: string) => {
     setFavoritePlanId(planId);
@@ -47,12 +103,77 @@ export default function TablePlanCarousel({ tablePlans, onClose }: TablePlanCaro
     }
   };
 
+  // Calculate distance between two touch points
+  const getTouchDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (scale > 1) return;
-    setSwipeStart(e.touches[0].clientX);
+    // Pinch-to-zoom with two fingers
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      setLastPinchDistance(getTouchDistance(e.touches));
+      return;
+    }
+    
+    // Single finger - swipe or drag
+    if (e.touches.length === 1) {
+      if (scale > 1) {
+        // Drag when zoomed in
+        setDragStart({ 
+          x: e.touches[0].clientX - position.x, 
+          y: e.touches[0].clientY - position.y 
+        });
+        setIsDragging(true);
+      } else {
+        // Swipe when not zoomed
+        setSwipeStart(e.touches[0].clientX);
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // Pinch-to-zoom
+    if (e.touches.length === 2 && lastPinchDistance !== null) {
+      e.preventDefault();
+      const currentDistance = getTouchDistance(e.touches);
+      const scaleFactor = currentDistance / lastPinchDistance;
+      const newScale = Math.min(Math.max(0.5, scale * scaleFactor), 3);
+      setScale(newScale);
+      setLastPinchDistance(currentDistance);
+      
+      if (newScale <= 1) {
+        setPosition({ x: 0, y: 0 });
+      }
+      return;
+    }
+    
+    // Single finger drag when zoomed
+    if (e.touches.length === 1 && isDragging && scale > 1) {
+      setPosition({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y
+      });
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    // Reset pinch tracking
+    if (lastPinchDistance !== null) {
+      setLastPinchDistance(null);
+      return;
+    }
+    
+    // Handle drag end
+    if (isDragging) {
+      setIsDragging(false);
+      return;
+    }
+    
+    // Handle swipe
     if (swipeStart === null || scale > 1) return;
     const swipeEnd = e.changedTouches[0].clientX;
     const diff = swipeStart - swipeEnd;
@@ -108,6 +229,40 @@ export default function TablePlanCarousel({ tablePlans, onClose }: TablePlanCaro
       >
         {/* Header with Plan Selector */}
         <div className="absolute top-0 left-0 right-0 z-10 bg-black/30 backdrop-blur-sm px-4 py-3 flex items-center justify-between gap-4">
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleZoomOut(); }}
+              className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
+              title="Verkleinern"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+              </svg>
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleResetZoom(); }}
+              className="px-2 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-sm font-medium min-w-[50px]"
+              title="Zoom zurücksetzen"
+            >
+              {Math.round(scale * 100)}%
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleZoomIn(); }}
+              className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
+              title="Vergrößern"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <line x1="11" y1="8" x2="11" y2="14"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+              </svg>
+            </button>
+          </div>
+
           {/* Plan Tabs - NO nested buttons */}
           <div className="flex items-center gap-2 flex-1 overflow-x-auto">
             {tablePlans.map((plan, index) => (
@@ -157,8 +312,9 @@ export default function TablePlanCarousel({ tablePlans, onClose }: TablePlanCaro
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          onClick={onClose}
+          onClick={(e) => { if (!isDragging && lastPinchDistance === null) onClose(); }}
           style={{ cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
         >
           <div className="w-full h-full flex items-center justify-center">
@@ -200,8 +356,11 @@ export default function TablePlanCarousel({ tablePlans, onClose }: TablePlanCaro
         )}
 
         {/* Bottom hint */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs bg-black/30 px-3 py-1 rounded-full">
-          Wischen zum Wechseln • Klick zum Schließen
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/50 text-xs bg-black/30 px-3 py-1 rounded-full text-center">
+          {isMobile 
+            ? '2 Finger zum Zoomen • Wischen zum Wechseln' 
+            : 'Mausrad zum Zoomen • Wischen zum Wechseln • Klick zum Schließen'
+          }
         </div>
       </div>
     </div>
