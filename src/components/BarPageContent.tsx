@@ -905,7 +905,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                   .map((table) => (
                     <div key={table.tableNumber} className="border-2 border-gray-200 rounded-xl p-3">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-2xl font-bold text-evm-green">T{table.tableNumber}</span>
+                        <span className="text-2xl font-bold text-evm-green">{getTableNameSync(table.tableNumber)}</span>
                         <span className="text-lg font-bold text-green-600">{(table.totalAmount || 0).toFixed(2)} €</span>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{table.totalOrders} Bestellungen</p>
@@ -946,7 +946,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                   Object.values(statistics.tables)
                     .sort((a, b) => b.totalAmount - a.totalAmount)
                     .forEach((table) => {
-                      csv += `Tisch ${table.tableNumber};${table.totalOrders};${(table.totalAmount || 0).toFixed(2).replace('.', ',')}\n`;
+                      csv += `${getTableNameSync(table.tableNumber)};${table.totalOrders};${(table.totalAmount || 0).toFixed(2).replace('.', ',')}\n`;
                     });
                 }
                 
