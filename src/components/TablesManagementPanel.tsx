@@ -191,9 +191,15 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
       const newTables = await createTables(count);
       setCurrentTables(newTables);
       
+      // Ensure custom tables exist and have names
+      const ensuredCustom = await ensureCustomTableEntries();
+      
+      // Reload all tables to get complete list with names
+      const allTables = await getAllTables();
+      
       const baseUrl = window.location.origin;
       const qrData = await Promise.all(
-        newTables.map(async (table) => {
+        allTables.map(async (table) => {
           const tableUrl = `${baseUrl}/tisch/${table.code}`;
           const qrDataUrl = await QRCode.toDataURL(tableUrl, {
             width: 150,
@@ -206,34 +212,13 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
           return {
             tableNumber: table.number,
             code: table.code,
-            qrDataUrl
-          };
-        })
-      );
-      
-      // Add custom tables with 4-char codes to QR codes
-      const ensuredCustom = await ensureCustomTableEntries();
-      const customTableQRs = await Promise.all(
-        ensuredCustom.map(async (ct) => {
-          const tableUrl = `${baseUrl}/tisch/${ct.code}`;
-          const qrDataUrl = await QRCode.toDataURL(tableUrl, {
-            width: 150,
-            margin: 2,
-            color: {
-              dark: settings.colors?.primaryTisch || '#009640',
-              light: '#FFFFFF'
-            }
-          });
-          return {
-            tableNumber: ct.number,
-            code: ct.code,
             qrDataUrl,
-            customName: ct.name
+            customName: table.name // Use name from database if available
           };
         })
       );
       
-      setDynamicQRCodes([...qrData, ...customTableQRs]);
+      setDynamicQRCodes(qrData);
       setShowDynamicQRs(true);
       
       alert(`✅ Erfolgreich ${count} neue Tische generiert!`);
@@ -275,8 +260,15 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
     setGenerating(true);
     try {
       const baseUrl = window.location.origin;
+      
+      // Ensure custom tables have names in DB before printing
+      await ensureCustomTableEntries();
+      
+      // Reload tables to get updated names
+      const updatedTables = await getAllTables();
+      
       const qrData = await Promise.all(
-        currentTables.map(async (table) => {
+        updatedTables.map(async (table) => {
           const tableUrl = `${baseUrl}/tisch/${table.code}`;
           const qrDataUrl = await QRCode.toDataURL(tableUrl, {
             width: 150,
@@ -289,37 +281,16 @@ export default function TablesManagementPanel({ baseUrl = '' }: TablesManagement
           return {
             tableNumber: table.number,
             code: table.code,
-            qrDataUrl
-          };
-        })
-      );
-      
-      // Add custom tables with 4-char codes to QR codes
-      const ensuredCustom = await ensureCustomTableEntries();
-      const customTableQRs = await Promise.all(
-        ensuredCustom.map(async (ct) => {
-          const tableUrl = `${baseUrl}/tisch/${ct.code}`;
-          const qrDataUrl = await QRCode.toDataURL(tableUrl, {
-            width: 150,
-            margin: 2,
-            color: {
-              dark: settings.colors?.primaryTisch || '#009640',
-              light: '#FFFFFF'
-            }
-          });
-          return {
-            tableNumber: ct.number,
-            code: ct.code,
             qrDataUrl,
-            customName: ct.name
+            customName: table.name // Use name from database if available
           };
         })
       );
       
-      setDynamicQRCodes([...qrData, ...customTableQRs]);
+      setDynamicQRCodes(qrData);
       setShowDynamicQRs(true);
       
-      alert(`✅ QR-Codes für ${currentTables.length + (settings.customTables?.length || 0)} Tische bereit zum Drucken!`);
+      alert(`✅ QR-Codes für ${updatedTables.length} Tische bereit zum Drucken!`);
     } catch (error) {
       console.error('Failed to generate QR codes:', error);
       alert('❌ Fehler beim Generieren der QR-Codes');

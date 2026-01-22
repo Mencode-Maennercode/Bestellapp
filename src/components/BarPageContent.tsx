@@ -10,6 +10,7 @@ import StatisticsPanel from '@/components/StatisticsPanel';
 import BroadcastPanel from '@/components/BroadcastPanel';
 import TablePlanCarousel from '@/components/TablePlanCarousel';
 import { AppSettings, defaultSettings, subscribeToSettings, getWaitersForTable, WaiterAssignment, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, verifyAdminPin } from '@/lib/settings';
+import { getTableByNumber } from '@/lib/dynamicTables';
 
 interface Order {
   id: string;
@@ -247,7 +248,32 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
   };
 
   // Get display name for a table (handles both regular and custom tables)
-  const getTableName = (tableNumber: number): string => {
+  const getTableName = async (tableNumber: number): Promise<string> => {
+    if (tableNumber >= 1000) {
+      // For custom tables, try to get name from database first
+      try {
+        const table = await getTableByNumber(tableNumber);
+        if (table && table.name) {
+          return table.name;
+        }
+      } catch (error) {
+        console.error('Error getting table name:', error);
+      }
+      
+      // Fallback to settings
+      if (settings.customTables) {
+        const customIndex = tableNumber - 1000;
+        const customTable = settings.customTables[customIndex];
+        if (customTable && customTable.name) {
+          return customTable.name;
+        }
+      }
+    }
+    return `T${tableNumber}`;
+  };
+
+  // Synchronous version for display (fallback to cached data)
+  const getTableNameSync = (tableNumber: number): string => {
     if (tableNumber >= 1000 && settings.customTables) {
       const customIndex = tableNumber - 1000;
       const customTable = settings.customTables[customIndex];
@@ -662,7 +688,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <span className="bar-table-number">
-                        {getTableName(order.tableNumber)}
+                        {getTableNameSync(order.tableNumber)}
                       </span>
                       {/* Show assigned waiters in parentheses */}
                       {assignedWaiters.length > 0 && (

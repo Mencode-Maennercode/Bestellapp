@@ -29,6 +29,7 @@ export default function TablePage() {
   const router = useRouter();
   const { code } = router.query;
   const [tableNumber, setTableNumber] = useState<number | null>(null);
+  const [tableName, setTableName] = useState<string | null>(null);
   const [isShutdown, setIsShutdown] = useState(false);
   const [isOrderFormDisabled, setIsOrderFormDisabled] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
@@ -159,6 +160,7 @@ export default function TablePage() {
             const table = await getTableByCode(code);
             if (table) {
               setTableNumber(table.number);
+              setTableName(table.name || null); // Set custom name if available
             }
           }
         }
@@ -858,7 +860,9 @@ export default function TablePage() {
               className="inline-block px-5 py-2 rounded-full bg-white/90 backdrop-blur font-black text-xl sm:text-2xl shadow-lg whitespace-nowrap"
               style={{ color: getContrastTextColor(settings.colors.secondaryTisch) }}
             >
-              {tableNumber === 999 ? t('demo_table', settings.language) : `${t('table', settings.language)} ${tableNumber}`}
+              {tableNumber === 999 ? t('demo_table', settings.language) : (
+              tableName ? tableName : `${t('table', settings.language)} ${tableNumber}`
+            )}
             </span>
           </div>
         </div>

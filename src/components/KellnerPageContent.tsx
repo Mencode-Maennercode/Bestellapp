@@ -5,6 +5,7 @@ import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
 import { getMenuConfiguration, type MenuConfiguration, getDrinkDatabase, type DrinkDatabase, getCategoryDatabase } from '@/lib/menuManager';
 import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, saveWaiterAssignment, getContrastTextColor } from '@/lib/settings';
 import { getActualGeneratedTableNumbers } from '@/lib/tables';
+import { getTableByNumber } from '@/lib/dynamicTables';
 import TablePlanCarousel from '@/components/TablePlanCarousel';
 
 interface Order {
@@ -799,7 +800,32 @@ export default function WaiterPage() {
   };
 
   // Get display name for a table (handles both regular and custom tables)
-  const getTableName = (tableNumber: number): string => {
+  const getTableName = async (tableNumber: number): Promise<string> => {
+    if (tableNumber >= 1000) {
+      // For custom tables, try to get name from database first
+      try {
+        const table = await getTableByNumber(tableNumber);
+        if (table && table.name) {
+          return table.name;
+        }
+      } catch (error) {
+        console.error('Error getting table name:', error);
+      }
+      
+      // Fallback to settings
+      if (settings.customTables) {
+        const customIndex = tableNumber - 1000;
+        const customTable = settings.customTables[customIndex];
+        if (customTable && customTable.name) {
+          return customTable.name;
+        }
+      }
+    }
+    return `T${tableNumber}`;
+  };
+
+  // Synchronous version for display (fallback to cached data)
+  const getTableNameSync = (tableNumber: number): string => {
     if (tableNumber >= 1000 && settings.customTables) {
       const customIndex = tableNumber - 1000;
       const customTable = settings.customTables[customIndex];
@@ -1591,7 +1617,7 @@ export default function WaiterPage() {
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-4xl font-black">
-                        {getTableName(order.tableNumber)}
+                        {getTableNameSync(order.tableNumber)}
                       </span>
                       {isClaimed && (
                         <span className="bg-white/30 px-2 py-1 rounded text-sm">
@@ -1730,7 +1756,7 @@ export default function WaiterPage() {
                 <div className="p-4 border-b bg-gray-50">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-bold text-gray-800">
-                      🛍️ Bestellung für {getTableName(orderTableNumber)}
+                      🛍️ Bestellung für {getTableNameSync(orderTableNumber)}
                     </h2>
                     <button
                       onClick={() => setShowOrderForm(false)}
