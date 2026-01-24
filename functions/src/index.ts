@@ -1,4 +1,5 @@
-import * as functions from "firebase-functions";
+import {onValueCreated} from "firebase-functions/v2/database";
+import {onSchedule} from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -28,12 +29,14 @@ interface FCMTokenData {
  * Cloud Function that triggers when a new order is created.
  * Sends push notifications to all waiters assigned to the table.
  */
-export const sendOrderNotification = functions
-  .region("europe-west1")
-  .database.ref("/orders/{orderId}")
-  .onCreate(async (snapshot, context) => {
-    const order = snapshot.val() as Order;
-    const orderId = context.params.orderId;
+export const sendOrderNotification = onValueCreated(
+  {
+    ref: "/orders/{orderId}",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const order = event.data.val() as Order;
+    const orderId = event.params.orderId as string;
 
     console.log("New order created:", orderId, order);
 
@@ -170,15 +173,18 @@ export const sendOrderNotification = functions
       console.error("Error sending push notification:", error);
       return { success: false, error: String(error) };
     }
-  });
+  }
+);
 
 /**
  * Cleanup function to remove invalid FCM tokens
  */
-export const cleanupInvalidTokens = functions
-  .region("europe-west1")
-  .pubsub.schedule("every 24 hours")
-  .onRun(async () => {
+export const cleanupInvalidTokens = onSchedule(
+  {
+    schedule: "every 24 hours",
+    region: "europe-west1",
+  },
+  async (event) => {
     console.log("Running FCM token cleanup");
 
     try {
@@ -187,7 +193,7 @@ export const cleanupInvalidTokens = functions
 
       if (!tokens) {
         console.log("No tokens to clean up");
-        return null;
+        return;
       }
 
       const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
@@ -205,10 +211,8 @@ export const cleanupInvalidTokens = functions
         await db.ref("fcmTokens").update(updates);
         console.log("Removed", Object.keys(updates).length, "stale tokens");
       }
-
-      return { cleaned: Object.keys(updates).length };
     } catch (error) {
       console.error("Error cleaning up tokens:", error);
-      return { error: String(error) };
     }
-  });
+  }
+);
