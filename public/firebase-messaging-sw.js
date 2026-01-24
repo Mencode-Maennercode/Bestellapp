@@ -11,8 +11,8 @@ const firebaseConfig = {
   databaseURL: "https://karneval-bestellsystem-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "karneval-bestellsystem",
   storageBucket: "karneval-bestellsystem.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  messagingSenderId: "485865467408",
+  appId: "1:485865467408:web:8c8f0e6e0e6e0e6e0e6e0e"
 };
 
 // Initialize Firebase
