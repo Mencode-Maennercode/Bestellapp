@@ -474,12 +474,12 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
 
     setResetting(true);
     try {
-      // Save current statistics to history before resetting
+      // Save current statistics to history before resetting (silent)
       const historyEntry = {
         timestamp: Date.now(),
         statistics: { ...statistics },
         resetBy: 'admin',
-        resetReason: 'Manuelles Zurücksetzen'
+        resetReason: 'Admin Reset via Bar Interface'
       };
 
       // Get current history
@@ -521,7 +521,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
       
       setShowResetModal(false);
       setResetPin('');
-      alert('✅ Statistiken wurden zur Historie gespeichert und zurückgesetzt!');
+      alert('✅ Statistiken wurden zurückgesetzt!');
     } catch (err) {
       console.error('Error resetting statistics:', err);
       alert('❌ Fehler beim Zurücksetzen!');

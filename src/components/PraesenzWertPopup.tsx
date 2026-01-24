@@ -15,6 +15,18 @@ export default function PraesenzWertPopup({ onClose }: PraesenzWertPopupProps) {
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Get table number from URL or localStorage
+  const getTableNumber = () => {
+    if (typeof window !== 'undefined') {
+      const urlPath = window.location.pathname;
+      const match = urlPath.match(/\/tisch\/([^\/]+)/);
+      if (match) {
+        return match[1];
+      }
+    }
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +46,9 @@ export default function PraesenzWertPopup({ onClose }: PraesenzWertPopupProps) {
         email: email || null,
         message: message || null,
         timestamp: Date.now(),
-        source: 'tisch-app'
+        source: 'tisch-app',
+        tableNumber: getTableNumber(),
+        tableCode: getTableNumber() // Store the table code for reference
       });
 
       setSubmitted(true);
