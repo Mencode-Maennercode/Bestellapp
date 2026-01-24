@@ -1527,18 +1527,6 @@ export default function KellnerPageContent({ code }: { code: string }) {
               >
                 🔄
               </button>
-              {!isHeaderCollapsed && (
-                <button
-                  onClick={() => setShowResetConfirmModal(true)}
-                  className="px-3 py-2 rounded-lg text-sm"
-                  style={{
-                    backgroundColor: 'rgba(239, 68, 68, 0.3)',
-                    color: getContrastTextColor(settings.colors.primaryKellner)
-                  }}
-                >
-                  🔄 Zurücksetzen
-                </button>
-              )}
             </div>
             <div className="flex gap-2 items-center">
               {isHeaderCollapsed && (
@@ -1783,7 +1771,7 @@ export default function KellnerPageContent({ code }: { code: string }) {
         </div>
       )}
 
-      {/* Footer with Quick Order Buttons - Collapsible */}
+      {/* Footer with Table Badges - Collapsible */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
         <div className="max-w-lg mx-auto">
           <div className="p-4 pb-2">
@@ -1798,39 +1786,70 @@ export default function KellnerPageContent({ code }: { code: string }) {
             </div>
             {!isFooterCollapsed && (
               <>
+                {/* Show first 6 tables as badges */}
                 <div className="flex flex-wrap gap-2 justify-center mb-3">
-                  {assignedTables.map((tableNum) => {
-                    const isCustom = tableNum >= 1000;
-                    const customTable = isCustom ? settings.customTables?.[tableNum - 1000] : null;
+                  {assignedTables.slice(0, 6).map((tableNum) => {
+                    const tableOrders = orders.filter(order => order.tableNumber === tableNum);
+                    const hasNewOrders = tableOrders.length > 0;
                     return (
                       <button
                         key={tableNum}
-                        onClick={() => handleOpenOrderForm(tableNum)}
-                        className="px-4 py-2 h-10 min-w-[3.5rem] flex items-center justify-center rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+                        onClick={() => handleQuickOrder(tableNum)}
+                        className={`px-4 py-3 rounded-xl font-bold text-lg transition-all ${
+                          hasNewOrders 
+                            ? 'bg-orange-500 text-white shadow-lg animate-pulse' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
                       >
-                        {isCustom ? customTable?.name : `T${tableNum}`}
+                        {getTableNameSync(tableNum)}
+                        {hasNewOrders && (
+                          <span className="ml-1 bg-red-600 text-white text-xs rounded-full px-1">
+                            {tableOrders.length}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
-                  <button
-                    onClick={handleStartFreeBooking}
-                    className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
-                  >
-                    📝 Frei
-                  </button>
-                  <button
-                    onClick={() => setShowAddTableModal(true)}
-                    className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
-                  >
-                    +/- Tisch
-                  </button>
                 </div>
-                <div className="flex justify-center mb-2">
+                
+                {/* Show remaining tables and additional options */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {assignedTables.slice(6).map((tableNum) => {
+                    const tableOrders = orders.filter(order => order.tableNumber === tableNum);
+                    const hasNewOrders = tableOrders.length > 0;
+                    return (
+                      <button
+                        key={tableNum}
+                        onClick={() => handleQuickOrder(tableNum)}
+                        className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
+                          hasNewOrders 
+                            ? 'bg-orange-500 text-white shadow-lg' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {getTableNameSync(tableNum)}
+                        {hasNewOrders && (
+                          <span className="ml-1 bg-red-600 text-white text-xs rounded-full px-1">
+                            {tableOrders.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                  
+                  {/* Additional options */}
                   <button
-                    onClick={handleInstallPWA}
-                    className="px-6 py-2 rounded-xl font-bold text-sm bg-green-500 text-white active:scale-95 transition-transform shadow-sm"
+                    onClick={() => setShowFreeBookingModal(true)}
+                    className="px-3 py-2 rounded-lg font-bold text-sm bg-green-500 text-white hover:bg-green-600 transition-colors"
                   >
-                    📲 Als App installieren
+                    🪑 Frei Tisch
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowTableManagementModal(true)}
+                    className="px-3 py-2 rounded-lg font-bold text-sm bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                  >
+                    ➕ Tische
                   </button>
                 </div>
               </>
