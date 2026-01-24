@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { database, ref, onValue, remove, push, set, getFCMToken, saveWaiterFCMToken, onForegroundMessage, removeWaiterFCMToken } from '@/lib/firebase';
+import { database, ref, onValue, remove, push, set } from '@/lib/firebase';
 import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
 import { getMenuConfiguration, type MenuConfiguration, getDrinkDatabase, type DrinkDatabase, getCategoryDatabase } from '@/lib/menuManager';
-import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, saveWaiterAssignment, getContrastTextColor, getCachedSettings } from '@/lib/settings';
+import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, saveWaiterAssignment, getContrastTextColor } from '@/lib/settings';
 import { getActualGeneratedTableNumbers } from '@/lib/tables';
 import { getTableByNumber } from '@/lib/dynamicTables';
 import TablePlanCarousel from '@/components/TablePlanCarousel';
@@ -135,8 +135,7 @@ class AlarmSystem {
 // Global alarm instance
 const alarm = typeof window !== 'undefined' ? new AlarmSystem() : null;
 
-// Kellner Page Component
-export default function KellnerPageContent({ code }: { code: string }) {
+export default function WaiterPage() {
   const [waiterName, setWaiterName] = useState('');
   const [assignedTables, setAssignedTables] = useState<number[]>([]);
   const [isSetup, setIsSetup] = useState(false);
@@ -212,18 +211,14 @@ export default function KellnerPageContent({ code }: { code: string }) {
   // Statistics for sorting by table orders
   const [statistics, setStatistics] = useState<{ tables: { [key: number]: { items: { [key: string]: { quantity: number } } } } }>({ tables: {} });
   
-  // Settings integration - use cached settings for instant color loading
-  const [settings, setSettings] = useState<AppSettings>(() => getCachedSettings());
+  // Settings integration
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [broadcast, setBroadcast] = useState<BroadcastMessage | null>(null);
   
   // Collapsible state for "Für den ganzen Tisch" (waiter modal)
   const [isTableSectionCollapsed, setIsTableSectionCollapsed] = useState(true);
   const [broadcastDismissed, setBroadcastDismissed] = useState(false);
   const [lastSeenBroadcastTime, setLastSeenBroadcastTime] = useState<number>(0);
-  
-  // Header/Footer collapse state
-  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
-  const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
 
   // Load broadcast read status from localStorage on mount
   useEffect(() => {
@@ -473,19 +468,6 @@ export default function KellnerPageContent({ code }: { code: string }) {
       setIsSetup(true);
       // Clear manual reset flag since user is now properly logged in again
       setManualResetInProgress(false);
-      
-      // Re-register FCM token on page load (token may have expired)
-      (async () => {
-        try {
-          const fcmToken = await getFCMToken();
-          if (fcmToken) {
-            await saveWaiterFCMToken(savedName, fcmToken);
-            console.log('FCM token refreshed for:', savedName);
-          }
-        } catch (error) {
-          console.error('FCM refresh error:', error);
-        }
-      })();
     }
     
     // Clear self-refresh flag after a short delay to allow Bar-triggered resets to work
@@ -495,26 +477,6 @@ export default function KellnerPageContent({ code }: { code: string }) {
     
     return () => clearTimeout(timer);
   }, []);
-
-  // Handle FCM foreground messages - trigger alarm when notification arrives while app is open
-  useEffect(() => {
-    if (!isSetup || !waiterName) return;
-    
-    const unsubscribe = onForegroundMessage((payload) => {
-      console.log('Foreground FCM message:', payload);
-      // Trigger the alarm system for foreground messages too
-      if (alarmEnabled && alarm) {
-        alarm.startAlarm();
-        setAlarmActive(true);
-      }
-      // Also trigger vibration
-      if (navigator.vibrate) {
-        navigator.vibrate([500, 200, 500, 200, 500, 200, 500]);
-      }
-    });
-    
-    return () => unsubscribe();
-  }, [isSetup, waiterName, alarmEnabled]);
 
   // Listen to Firebase waiter assignments to detect if current waiter's assignment is removed
   useEffect(() => {
@@ -648,18 +610,6 @@ export default function KellnerPageContent({ code }: { code: string }) {
     
     // Save to Firebase for multi-waiter tracking
     await saveWaiterAssignment(waiterName, assignedTables);
-    
-    // Register for FCM push notifications
-    try {
-      const fcmToken = await getFCMToken();
-      if (fcmToken) {
-        await saveWaiterFCMToken(waiterName, fcmToken);
-        console.log('FCM Push Notifications aktiviert für:', waiterName);
-      }
-    } catch (error) {
-      console.error('FCM registration error:', error);
-      // Don't block setup if FCM fails
-    }
     
     // Clear manual reset flag since user is now properly logged in again
     setManualResetInProgress(false);
@@ -1508,104 +1458,64 @@ export default function KellnerPageContent({ code }: { code: string }) {
         </div>
       )}
 
-      {/* Header - Collapsible */}
-      <div className="sticky top-0 z-10 shadow-lg" style={{ 
+      {/* Header */}
+      <div className="p-4 sticky top-0 z-10 shadow-lg" style={{ 
         backgroundColor: settings.colors.primaryKellner,
         color: getContrastTextColor(settings.colors.primaryKellner)
       }}>
-        <div className="p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div>
               <h1 className="text-xl font-bold">👤 {waiterName}</h1>
-              <button
-                onClick={() => setShowResetConfirmModal(true)}
-                className="px-3 py-2 rounded-lg text-sm"
-                style={{
-                  backgroundColor: 'rgba(239, 68, 68, 0.3)',
-                  color: getContrastTextColor(settings.colors.primaryKellner)
-                }}
-              >
-                🔄
-              </button>
-            </div>
-            <div className="flex gap-2 items-center">
-              {isHeaderCollapsed && (
-                <>
-                  {(settings.tablePlans && settings.tablePlans.length > 0) && (
-                    <button
-                      onClick={() => setShowTablePlan(true)}
-                      className="px-2 py-1 rounded text-xs"
-                      style={{
-                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                        color: getContrastTextColor(settings.colors.primaryKellner)
-                      }}
-                    >
-                      🗺️
-                    </button>
-                  )}
-                  <span className="text-xs px-2 py-1 rounded" style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: getContrastTextColor(settings.colors.primaryKellner)
-                  }}>
-                    {assignedTables.length > 0 ? `${assignedTables.length} T` : '0 T'}
-                  </span>
-                </>
-              )}
-              {!isHeaderCollapsed && (
-                <>
-                  {(settings.tablePlans && settings.tablePlans.length > 0) && (
-                    <button
-                      onClick={() => setShowTablePlan(true)}
-                      className="px-3 py-2 rounded-lg text-sm"
-                      style={{
-                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                        color: getContrastTextColor(settings.colors.primaryKellner)
-                      }}
-                    >
-                      🗺️ Pläne ({settings.tablePlans.length})
-                    </button>
-                  )}
-                  <button
-                    onClick={handleTestAlarm}
-                    className="px-3 py-2 rounded-lg text-sm"
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                      color: getContrastTextColor(settings.colors.primaryKellner)
-                    }}
-                  >
-                    🔊 Test
-                  </button>
-                </>
-              )}
-              <button
-                onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
-                className="px-3 py-2 rounded-lg text-sm"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  color: getContrastTextColor(settings.colors.primaryKellner)
-                }}
-              >
-                {isHeaderCollapsed ? '▼' : '▲'}
-              </button>
-            </div>
-          </div>
-          {!isHeaderCollapsed && (
-            <>
-              <p className="text-sm opacity-80 mt-2">
+              <p className="text-sm opacity-80">
                 Tische: {assignedTables.length > 0 ? assignedTables.map(t => getTableNameSync(t)).join(', ') : 'Keine Tische zugewiesen'}
               </p>
-              {alarmEnabled && (
-                <div className="mt-2 rounded-lg px-3 py-1 text-sm text-center"
-                     style={{
-                       backgroundColor: '#10b981',
-                       color: getContrastTextColor('#10b981')
-                     }}>
-                  ✅ Alarm aktiv - Handy laut lassen!
-                </div>
-              )}
-            </>
-          )}
+            </div>
+            <button
+              onClick={() => setShowResetConfirmModal(true)}
+              className="px-3 py-2 rounded-lg text-sm"
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                color: getContrastTextColor(settings.colors.primaryKellner)
+              }}
+            >
+              🔄
+            </button>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {(settings.tablePlans && settings.tablePlans.length > 0) && (
+              <button
+                onClick={() => setShowTablePlan(true)}
+                className="px-3 py-2 rounded-lg text-sm"
+                style={{
+                  backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                  color: getContrastTextColor(settings.colors.primaryKellner)
+                }}
+              >
+                🗺️ Pläne ({settings.tablePlans.length})
+              </button>
+            )}
+            <button
+              onClick={handleTestAlarm}
+              className="px-3 py-2 rounded-lg text-sm"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: getContrastTextColor(settings.colors.primaryKellner)
+              }}
+            >
+              🔊 Test
+            </button>
+          </div>
         </div>
+        {alarmEnabled && (
+          <div className="mt-2 rounded-lg px-3 py-1 text-sm text-center"
+               style={{
+                 backgroundColor: '#10b981',
+                 color: getContrastTextColor('#10b981')
+               }}>
+            ✅ Alarm aktiv - Handy laut lassen!
+          </div>
+        )}
       </div>
 
       {/* Orders */}
@@ -1771,62 +1681,46 @@ export default function KellnerPageContent({ code }: { code: string }) {
         </div>
       )}
 
-      {/* Footer with Quick Order Buttons - Collapsible */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-        <div className="max-w-lg mx-auto">
-          <div className="p-4 pb-2">
-            <div className="flex justify-end items-center mb-2">
-              <button
-                onClick={() => setIsFooterCollapsed(!isFooterCollapsed)}
-                className="px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700"
-              >
-                {isFooterCollapsed ? '▲' : '▼'}
-              </button>
-            </div>
-            {!isFooterCollapsed && (
-              <>
-                <div className="flex flex-wrap gap-2 justify-center mb-3">
-                  {assignedTables.map((tableNum) => {
-                    const tableOrders = orders.filter(order => order.tableNumber === tableNum);
-                    const hasNewOrders = tableOrders.length > 0;
-                    return (
-                      <button
-                        key={tableNum}
-                        onClick={() => handleOpenOrderForm(tableNum)}
-                        className={`px-4 py-3 rounded-xl font-bold text-lg transition-all ${
-                          hasNewOrders 
-                            ? 'bg-orange-500 text-white shadow-lg animate-pulse' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        {getTableNameSync(tableNum)}
-                        {hasNewOrders && (
-                          <span className="ml-1 bg-red-600 text-white text-xs rounded-full px-1">
-                            {tableOrders.length}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <button
-                    onClick={() => setShowFreeBookingModal(true)}
-                    className="px-3 py-2 rounded-lg font-bold text-sm bg-green-500 text-white hover:bg-green-600 transition-colors"
-                  >
-                    🪑 Frei Tisch
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowAddTableModal(true)}
-                    className="px-3 py-2 rounded-lg font-bold text-sm bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                  >
-                    ➕ Tische
-                  </button>
-                </div>
-              </>
-            )}
+      {/* Footer with Quick Order Buttons */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-8 z-40">
+        <div className="max-w-lg mx-auto space-y-3">
+          <div className="flex flex-wrap gap-2 justify-center">
+            {assignedTables.map((tableNum) => {
+              const isCustom = tableNum >= 1000;
+              const customTable = isCustom ? settings.customTables?.[tableNum - 1000] : null;
+              return (
+                <button
+                  key={tableNum}
+                  onClick={() => handleOpenOrderForm(tableNum)}
+                  className="px-4 py-2 h-10 min-w-[3.5rem] flex items-center justify-center rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+                >
+                  {isCustom ? customTable?.name : `T${tableNum}`}
+                </button>
+              );
+            })}
+            {/* Free Booking Button */}
+            <button
+              onClick={handleStartFreeBooking}
+              className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+            >
+              📝 Frei
+            </button>
+            {/* Add Table Button */}
+            <button
+              onClick={() => setShowAddTableModal(true)}
+              className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+            >
+              +/- Tisch
+            </button>
+          </div>
+          {/* App Download Button in Footer - always visible for testing */}
+          <div className="flex justify-center">
+            <button
+              onClick={handleInstallPWA}
+              className="px-6 py-2 rounded-xl font-bold text-sm bg-green-500 text-white active:scale-95 transition-transform shadow-sm"
+            >
+              📲 Als App installieren
+            </button>
           </div>
           
           {/* Footer Links */}
