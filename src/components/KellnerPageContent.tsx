@@ -1517,6 +1517,16 @@ export default function KellnerPageContent({ code }: { code: string }) {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold">👤 {waiterName}</h1>
+              <button
+                onClick={() => setShowResetConfirmModal(true)}
+                className="px-3 py-2 rounded-lg text-sm"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                  color: getContrastTextColor(settings.colors.primaryKellner)
+                }}
+              >
+                🔄
+              </button>
               {!isHeaderCollapsed && (
                 <button
                   onClick={() => setShowResetConfirmModal(true)}
@@ -1526,11 +1536,33 @@ export default function KellnerPageContent({ code }: { code: string }) {
                     color: getContrastTextColor(settings.colors.primaryKellner)
                   }}
                 >
-                  🔄
+                  🔄 Zurücksetzen
                 </button>
               )}
             </div>
             <div className="flex gap-2 items-center">
+              {isHeaderCollapsed && (
+                <>
+                  {(settings.tablePlans && settings.tablePlans.length > 0) && (
+                    <button
+                      onClick={() => setShowTablePlan(true)}
+                      className="px-2 py-1 rounded text-xs"
+                      style={{
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        color: getContrastTextColor(settings.colors.primaryKellner)
+                      }}
+                    >
+                      🗺️
+                    </button>
+                  )}
+                  <span className="text-xs px-2 py-1 rounded" style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    color: getContrastTextColor(settings.colors.primaryKellner)
+                  }}>
+                    {assignedTables.length > 0 ? `${assignedTables.length} T` : '0 T'}
+                  </span>
+                </>
+              )}
               {!isHeaderCollapsed && (
                 <>
                   {(settings.tablePlans && settings.tablePlans.length > 0) && (
@@ -1756,7 +1788,7 @@ export default function KellnerPageContent({ code }: { code: string }) {
         <div className="max-w-lg mx-auto">
           <div className="p-4 pb-2">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-bold text-gray-700">Schnellzugriff</span>
+              <span className="text-sm font-bold text-gray-700">Erste Tische</span>
               <button
                 onClick={() => setIsFooterCollapsed(!isFooterCollapsed)}
                 className="px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700"
