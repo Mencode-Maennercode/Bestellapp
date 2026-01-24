@@ -40,7 +40,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <title>Karneval Bestellsystem</title>
       </Head>
       <Component {...pageProps} />
-      <Footer />
+      {!isTischApp && <Footer />}
     </>
   );
 }

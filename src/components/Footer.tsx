@@ -6,25 +6,63 @@ const Footer = () => {
   const router = useRouter();
   const isBarPage = router.pathname.startsWith('/bar');
   const impressumLongPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const impressumClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showDeveloperPinModal, setShowDeveloperPinModal] = useState(false);
   const [developerPin, setDeveloperPin] = useState('');
   const [developerPinError, setDeveloperPinError] = useState(false);
 
-  // Handler for impressum long press (only on bar pages)
-  const handleImpressumLongPressStart = () => {
+  // Handler for impressum click - normal click opens impressum, long press opens developer modal
+  const handleImpressumMouseDown = () => {
+    if (!isBarPage) return;
+    
+    // Start long press timer (5 seconds)
+    impressumLongPressTimerRef.current = setTimeout(() => {
+      setShowDeveloperPinModal(true);
+      setDeveloperPin('');
+      setDeveloperPinError(false);
+    }, 5000); // 5 seconds long press
+  };
+
+  const handleImpressumMouseUp = () => {
+    if (!isBarPage) return;
+    
+    // Clear long press timer
+    if (impressumLongPressTimerRef.current) {
+      clearTimeout(impressumLongPressTimerRef.current);
+      impressumLongPressTimerRef.current = null;
+      
+      // If no long press occurred, open impressum normally
+      window.location.href = '/impressum';
+    }
+  };
+
+  const handleImpressumMouseLeave = () => {
+    if (impressumLongPressTimerRef.current) {
+      clearTimeout(impressumLongPressTimerRef.current);
+      impressumLongPressTimerRef.current = null;
+    }
+  };
+
+  // Touch events for mobile
+  const handleImpressumTouchStart = () => {
     if (!isBarPage) return;
     
     impressumLongPressTimerRef.current = setTimeout(() => {
       setShowDeveloperPinModal(true);
       setDeveloperPin('');
       setDeveloperPinError(false);
-    }, 800); // 800ms long press
+    }, 5000); // 5 seconds long press
   };
 
-  const handleImpressumLongPressEnd = () => {
+  const handleImpressumTouchEnd = () => {
+    if (!isBarPage) return;
+    
     if (impressumLongPressTimerRef.current) {
       clearTimeout(impressumLongPressTimerRef.current);
       impressumLongPressTimerRef.current = null;
+      
+      // If no long press occurred, open impressum normally
+      window.location.href = '/impressum';
     }
   };
 
@@ -64,11 +102,11 @@ const Footer = () => {
             {isBarPage ? (
               <span 
                 className="hover:text-gray-300 transition-colors cursor-pointer select-none"
-                onMouseDown={handleImpressumLongPressStart}
-                onMouseUp={handleImpressumLongPressEnd}
-                onMouseLeave={handleImpressumLongPressEnd}
-                onTouchStart={handleImpressumLongPressStart}
-                onTouchEnd={handleImpressumLongPressEnd}
+                onMouseDown={handleImpressumMouseDown}
+                onMouseUp={handleImpressumMouseUp}
+                onMouseLeave={handleImpressumMouseLeave}
+                onTouchStart={handleImpressumTouchStart}
+                onTouchEnd={handleImpressumTouchEnd}
               >
                 Impressum
               </span>

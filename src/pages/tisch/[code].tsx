@@ -1184,6 +1184,14 @@ export default function TablePage() {
           </div>
         )}
 
+        {/* PräsenzWert Info - direkt unter Bestellformular */}
+        <div className="text-center space-y-2 mb-4">
+          <p className="text-white/70 text-sm">Bezahlung erfolgt am Tisch</p>
+          <a href="https://praesenzwert.de" target="_blank" rel="noopener noreferrer" className="inline-block text-white/60 hover:text-white/80 text-xs">
+            Präsentiert von <span className="font-semibold">PräsenzWert</span> & Dorfgarde Nierendorf
+          </a>
+        </div>
+
         {/* PWA Install Button */}
         {showInstallButton && !isStandalone && (
           <button
@@ -1195,25 +1203,6 @@ export default function TablePage() {
             <span>Tisch {tableNumber} als App speichern</span>
           </button>
         )}
-
-        {/* Footer - Kompakt mit PräsenzWert */}
-        <div className="mt-8 pt-6 border-t border-white/20 text-center space-y-2">
-          <p className="text-white/70 text-sm">Bezahlung erfolgt am Tisch</p>
-          <a href="https://praesenzwert.de" target="_blank" rel="noopener noreferrer" className="inline-block text-white/60 hover:text-white/80 text-xs">
-            Präsentiert von <span className="font-semibold">PräsenzWert</span> & Dorfgarde Nierendorf
-          </a>
-          <div className="flex items-center justify-center gap-2 text-xs text-white/50">
-            <span>© 2026</span>
-            <span>•</span>
-            <button onClick={() => router.push('/impressum')} className="hover:text-white/70 underline">
-              Impressum
-            </button>
-            <span>•</span>
-            <button onClick={() => router.push('/datenschutz')} className="hover:text-white/70 underline">
-              Datenschutz
-            </button>
-          </div>
-        </div>
 
         {/* Selection Modals */}
         {/* Bottle Selection Modal */}
