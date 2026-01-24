@@ -11,6 +11,7 @@ import BroadcastPanel from '@/components/BroadcastPanel';
 import TablePlanCarousel from '@/components/TablePlanCarousel';
 import { AppSettings, defaultSettings, subscribeToSettings, getWaitersForTable, WaiterAssignment, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, verifyAdminPin } from '@/lib/settings';
 import { getTableByNumber } from '@/lib/dynamicTables';
+import Footer from '@/components/Footer';
 
 interface Order {
   id: string;
@@ -1433,8 +1434,8 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
         </div>
       )}
 
-      {/* Footer with Impressum */}
-      <footer className="bg-gray-800 text-white py-4 px-4 mt-8">
+      {/* Footer with long-press functionality */}
+      <div className="bg-gray-800 text-white py-4 px-4 mt-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center text-sm">
           <div className="mb-2 sm:mb-0">
             © 2026 Karneval Bestellsystem
@@ -1455,7 +1456,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
             </a>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
