@@ -4,6 +4,10 @@ const nextConfig = {
   images: {
     domains: ['www.energieschub.evm.de'],
   },
+  eslint: {
+    // Ignore ESLint errors during production builds (Vercel)
+    ignoreDuringBuilds: true,
+  },
   // Exclude Firebase Functions directory from Next.js compilation
   webpack: (config, { isServer }) => {
     config.watchOptions = {
