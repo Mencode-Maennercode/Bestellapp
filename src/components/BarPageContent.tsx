@@ -498,8 +498,8 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
       currentHistory[newEntryKey] = historyEntry;
 
       // Keep only last 10 entries
-      const historyArray = Object.values(currentHistory);
-      historyArray.sort((a, b) => b.timestamp - a.timestamp);
+      const historyArray = Object.values(currentHistory) as any[];
+      historyArray.sort((a: any, b: any) => b.timestamp - a.timestamp);
       
       if (historyArray.length > 10) {
         // Remove oldest entries
