@@ -469,8 +469,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
   };
 
   const handleResetStatistics = async () => {
-    const ok = await verifyAdminPin(resetPin);
-    if (!ok) { alert('Falscher PIN!'); return; }
+    if (resetPin !== '1265') { alert('Falscher PIN!'); return; }
 
     setResetting(true);
     try {
