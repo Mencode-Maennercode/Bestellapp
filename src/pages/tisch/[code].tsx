@@ -1203,7 +1203,9 @@ export default function TablePage() {
         {/* Footer - Kompakt mit PräsenzWert */}
         <div className="mt-8 pt-6 border-t border-white/20 text-center space-y-2">
           <p className="text-white/70 text-sm">Bezahlung erfolgt am Tisch</p>
-          <PraesenzWertPopup />
+          <a href="https://praesenzwert.de" target="_blank" rel="noopener noreferrer" className="inline-block text-white/60 hover:text-white/80 text-xs">
+            Präsentiert von <span className="font-semibold">PräsenzWert</span>
+          </a>
           <div className="flex items-center justify-center gap-2 text-xs text-white/50">
             <span>© 2026</span>
             <span>•</span>

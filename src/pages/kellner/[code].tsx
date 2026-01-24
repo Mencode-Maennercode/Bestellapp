@@ -41,5 +41,5 @@ export default function ProtectedKellnerPage() {
     );
   }
 
-  return <KellnerPageContent />;
+  return <KellnerPageContent code={code as string} />;
 }

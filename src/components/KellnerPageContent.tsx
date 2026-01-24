@@ -1803,6 +1803,7 @@ export default function KellnerPageContent({ code }: { code: string }) {
                 </div>
               </>
             )}
+          </div>
           
           {/* Footer Links */}
           <div className="flex justify-center gap-4 mt-4 pb-4">
