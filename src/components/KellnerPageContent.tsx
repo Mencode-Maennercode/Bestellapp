@@ -219,6 +219,10 @@ export default function WaiterPage() {
   const [isTableSectionCollapsed, setIsTableSectionCollapsed] = useState(true);
   const [broadcastDismissed, setBroadcastDismissed] = useState(false);
   const [lastSeenBroadcastTime, setLastSeenBroadcastTime] = useState<number>(0);
+  
+  // Header/Footer collapse state
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
 
   // Load broadcast read status from localStorage on mount
   useEffect(() => {
@@ -1503,64 +1507,84 @@ export default function WaiterPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="p-4 sticky top-0 z-10 shadow-lg" style={{ 
+      {/* Header - Collapsible */}
+      <div className="sticky top-0 z-10 shadow-lg" style={{ 
         backgroundColor: settings.colors.primaryKellner,
         color: getContrastTextColor(settings.colors.primaryKellner)
       }}>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div>
+        <div className="p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold">👤 {waiterName}</h1>
-              <p className="text-sm opacity-80">
-                Tische: {assignedTables.length > 0 ? assignedTables.map(t => getTableNameSync(t)).join(', ') : 'Keine Tische zugewiesen'}
-              </p>
+              {!isHeaderCollapsed && (
+                <button
+                  onClick={() => setShowResetConfirmModal(true)}
+                  className="px-3 py-2 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                    color: getContrastTextColor(settings.colors.primaryKellner)
+                  }}
+                >
+                  🔄
+                </button>
+              )}
             </div>
-            <button
-              onClick={() => setShowResetConfirmModal(true)}
-              className="px-3 py-2 rounded-lg text-sm"
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.3)',
-                color: getContrastTextColor(settings.colors.primaryKellner)
-              }}
-            >
-              🔄
-            </button>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {(settings.tablePlans && settings.tablePlans.length > 0) && (
+            <div className="flex gap-2 items-center">
+              {!isHeaderCollapsed && (
+                <>
+                  {(settings.tablePlans && settings.tablePlans.length > 0) && (
+                    <button
+                      onClick={() => setShowTablePlan(true)}
+                      className="px-3 py-2 rounded-lg text-sm"
+                      style={{
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        color: getContrastTextColor(settings.colors.primaryKellner)
+                      }}
+                    >
+                      🗺️ Pläne ({settings.tablePlans.length})
+                    </button>
+                  )}
+                  <button
+                    onClick={handleTestAlarm}
+                    className="px-3 py-2 rounded-lg text-sm"
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      color: getContrastTextColor(settings.colors.primaryKellner)
+                    }}
+                  >
+                    🔊 Test
+                  </button>
+                </>
+              )}
               <button
-                onClick={() => setShowTablePlan(true)}
+                onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
                 className="px-3 py-2 rounded-lg text-sm"
                 style={{
-                  backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
                   color: getContrastTextColor(settings.colors.primaryKellner)
                 }}
               >
-                🗺️ Pläne ({settings.tablePlans.length})
+                {isHeaderCollapsed ? '▼' : '▲'}
               </button>
-            )}
-            <button
-              onClick={handleTestAlarm}
-              className="px-3 py-2 rounded-lg text-sm"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: getContrastTextColor(settings.colors.primaryKellner)
-              }}
-            >
-              🔊 Test
-            </button>
+            </div>
           </div>
+          {!isHeaderCollapsed && (
+            <>
+              <p className="text-sm opacity-80 mt-2">
+                Tische: {assignedTables.length > 0 ? assignedTables.map(t => getTableNameSync(t)).join(', ') : 'Keine Tische zugewiesen'}
+              </p>
+              {alarmEnabled && (
+                <div className="mt-2 rounded-lg px-3 py-1 text-sm text-center"
+                     style={{
+                       backgroundColor: '#10b981',
+                       color: getContrastTextColor('#10b981')
+                     }}>
+                  ✅ Alarm aktiv - Handy laut lassen!
+                </div>
+              )}
+            </>
+          )}
         </div>
-        {alarmEnabled && (
-          <div className="mt-2 rounded-lg px-3 py-1 text-sm text-center"
-               style={{
-                 backgroundColor: '#10b981',
-                 color: getContrastTextColor('#10b981')
-               }}>
-            ✅ Alarm aktiv - Handy laut lassen!
-          </div>
-        )}
       </div>
 
       {/* Orders */}
@@ -1726,47 +1750,58 @@ export default function WaiterPage() {
         </div>
       )}
 
-      {/* Footer with Quick Order Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-8 z-40">
-        <div className="max-w-lg mx-auto space-y-3">
-          <div className="flex flex-wrap gap-2 justify-center">
-            {assignedTables.map((tableNum) => {
-              const isCustom = tableNum >= 1000;
-              const customTable = isCustom ? settings.customTables?.[tableNum - 1000] : null;
-              return (
-                <button
-                  key={tableNum}
-                  onClick={() => handleOpenOrderForm(tableNum)}
-                  className="px-4 py-2 h-10 min-w-[3.5rem] flex items-center justify-center rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
-                >
-                  {isCustom ? customTable?.name : `T${tableNum}`}
-                </button>
-              );
-            })}
-            {/* Free Booking Button */}
-            <button
-              onClick={handleStartFreeBooking}
-              className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
-            >
-              📝 Frei
-            </button>
-            {/* Add Table Button */}
-            <button
-              onClick={() => setShowAddTableModal(true)}
-              className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
-            >
-              +/- Tisch
-            </button>
-          </div>
-          {/* App Download Button in Footer - always visible for testing */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleInstallPWA}
-              className="px-6 py-2 rounded-xl font-bold text-sm bg-green-500 text-white active:scale-95 transition-transform shadow-sm"
-            >
-              📲 Als App installieren
-            </button>
-          </div>
+      {/* Footer with Quick Order Buttons - Collapsible */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div className="max-w-lg mx-auto">
+          <div className="p-4 pb-2">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-bold text-gray-700">Schnellzugriff</span>
+              <button
+                onClick={() => setIsFooterCollapsed(!isFooterCollapsed)}
+                className="px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700"
+              >
+                {isFooterCollapsed ? '▲' : '▼'}
+              </button>
+            </div>
+            {!isFooterCollapsed && (
+              <>
+                <div className="flex flex-wrap gap-2 justify-center mb-3">
+                  {assignedTables.map((tableNum) => {
+                    const isCustom = tableNum >= 1000;
+                    const customTable = isCustom ? settings.customTables?.[tableNum - 1000] : null;
+                    return (
+                      <button
+                        key={tableNum}
+                        onClick={() => handleOpenOrderForm(tableNum)}
+                        className="px-4 py-2 h-10 min-w-[3.5rem] flex items-center justify-center rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+                      >
+                        {isCustom ? customTable?.name : `T${tableNum}`}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={handleStartFreeBooking}
+                    className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+                  >
+                    📝 Frei
+                  </button>
+                  <button
+                    onClick={() => setShowAddTableModal(true)}
+                    className="px-4 py-2 h-10 rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-sm border border-amber-500 bg-amber-400 text-black"
+                  >
+                    +/- Tisch
+                  </button>
+                </div>
+                <div className="flex justify-center mb-2">
+                  <button
+                    onClick={handleInstallPWA}
+                    className="px-6 py-2 rounded-xl font-bold text-sm bg-green-500 text-white active:scale-95 transition-transform shadow-sm"
+                  >
+                    📲 Als App installieren
+                  </button>
+                </div>
+              </>
+            )}
           
           {/* Footer Links */}
           <div className="flex justify-center gap-4 mt-4 pb-4">

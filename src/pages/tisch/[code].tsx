@@ -855,38 +855,36 @@ export default function TablePage() {
           className="w-96 md:w-[36rem] mix-blend-multiply rounded-full saturate-150 brightness-110"
         />
       </div>
-      {/* Header */}
+      {/* Header - Kompakt */}
       <div 
-        className="p-4 shadow-lg relative z-10"
+        className="p-3 shadow-lg relative z-10"
         style={{ 
           backgroundColor: settings.colors.secondaryTisch,
           color: getContrastTextColor(settings.colors.secondaryTisch)
         }}
       >
-        <div className="flex flex-col sm:grid sm:grid-cols-3 sm:items-center gap-2">
-          <div className="flex items-center justify-center sm:justify-start gap-3 sm:col-start-1">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
             <img 
               src={settings.logo || "https://www.energieschub.evm.de/media/ecb72371a2/1a53b5737ffd_180x180_boxed.jpg"} 
               alt="Logo" 
-              className="w-14 h-14 rounded-full shadow-md"
+              className="w-12 h-12 rounded-full shadow-md"
             />
             <h1 
-              className="text-xl font-bold drop-shadow text-center sm:text-left"
+              className="text-lg font-bold drop-shadow"
               style={{ color: getContrastTextColor(settings.colors.secondaryTisch) }}
             >
               Fastelovend 2026
             </h1>
           </div>
-          <div className="text-center sm:col-start-2">
-            <span 
-              className="inline-block px-5 py-2 rounded-full bg-white/90 backdrop-blur font-black text-xl sm:text-2xl shadow-lg whitespace-nowrap"
-              style={{ color: getContrastTextColor(settings.colors.secondaryTisch) }}
-            >
-              {tableNumber === 999 ? t('demo_table', settings.language) : (
-              tableName ? tableName : `${t('table', settings.language)} ${tableNumber}`
-            )}
-            </span>
-          </div>
+          <span 
+            className="px-4 py-1.5 rounded-full bg-white/90 backdrop-blur font-black text-lg shadow-lg whitespace-nowrap"
+            style={{ color: getContrastTextColor(settings.colors.secondaryTisch) }}
+          >
+            {tableNumber === 999 ? t('demo_table', settings.language) : (
+            tableName ? tableName : `${t('table', settings.language)} ${tableNumber}`
+          )}
+          </span>
         </div>
       </div>
 
@@ -1190,10 +1188,6 @@ export default function TablePage() {
           </div>
         )}
 
-        <p className="text-white/70 text-center mt-6 text-sm">
-          Bezahlung erfolgt am Tisch
-        </p>
-
         {/* PWA Install Button */}
         {showInstallButton && !isStandalone && (
           <button
@@ -1205,6 +1199,23 @@ export default function TablePage() {
             <span>Tisch {tableNumber} als App speichern</span>
           </button>
         )}
+
+        {/* Footer - Kompakt mit PräsenzWert */}
+        <div className="mt-8 pt-6 border-t border-white/20 text-center space-y-2">
+          <p className="text-white/70 text-sm">Bezahlung erfolgt am Tisch</p>
+          <PraesenzWertPopup />
+          <div className="flex items-center justify-center gap-2 text-xs text-white/50">
+            <span>© 2026</span>
+            <span>•</span>
+            <button onClick={() => router.push('/impressum')} className="hover:text-white/70 underline">
+              Impressum
+            </button>
+            <span>•</span>
+            <button onClick={() => router.push('/datenschutz')} className="hover:text-white/70 underline">
+              Datenschutz
+            </button>
+          </div>
+        </div>
 
         {/* Selection Modals */}
         {/* Bottle Selection Modal */}
