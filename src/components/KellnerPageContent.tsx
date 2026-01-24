@@ -1846,7 +1846,7 @@ export default function KellnerPageContent({ code }: { code: string }) {
                   </button>
                   
                   <button
-                    onClick={() => setShowTableManagementModal(true)}
+                    onClick={() => setShowAddTableModal(true)}
                     className="px-3 py-2 rounded-lg font-bold text-sm bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                   >
                     ➕ Tische
