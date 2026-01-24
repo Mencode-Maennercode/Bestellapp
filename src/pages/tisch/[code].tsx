@@ -5,7 +5,6 @@ import { getTableByCode, isValidTableCode } from '@/lib/dynamicTables';
 import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
 import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, getContrastTextColor, getCachedSettings } from '@/lib/settings';
 import { getMenuConfiguration, MenuConfiguration, getCategoryDatabase, getDrinkDatabase, DrinkDatabase } from '@/lib/menuManager';
-import PraesenzWertBanner from '@/components/PraesenzWertBanner';
 import PraesenzWertPopup from '@/components/PraesenzWertPopup';
 
 interface OrderItem {
@@ -844,9 +843,6 @@ export default function TablePage() {
       className="min-h-screen relative overflow-hidden"
       style={{ background: `linear-gradient(135deg, ${settings.colors.primaryTisch} 0%, ${settings.colors.primaryTisch}dd 100%)` }}
     >
-      {/* PräsenzWert Banner - Above Header */}
-      <PraesenzWertBanner />
-
       {/* Background Logo Watermark */}
       <div className="pointer-events-none absolute top-6 right-[-4%] opacity-10 rotate-12">
         <img
@@ -1204,7 +1200,7 @@ export default function TablePage() {
         <div className="mt-8 pt-6 border-t border-white/20 text-center space-y-2">
           <p className="text-white/70 text-sm">Bezahlung erfolgt am Tisch</p>
           <a href="https://praesenzwert.de" target="_blank" rel="noopener noreferrer" className="inline-block text-white/60 hover:text-white/80 text-xs">
-            Präsentiert von <span className="font-semibold">PräsenzWert</span>
+            Präsentiert von <span className="font-semibold">PräsenzWert</span> & Dorfgarde Nierendorf
           </a>
           <div className="flex items-center justify-center gap-2 text-xs text-white/50">
             <span>© 2026</span>
