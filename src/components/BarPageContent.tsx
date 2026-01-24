@@ -718,25 +718,25 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                     </div>
                   ) : (
                     <div>
-                      <div className="bar-display mb-2">
+                      <div className="bar-display mb-3">
                         <span className="text-3xl">🛒</span>
-                        <span className="ml-2">Bestellung</span>
+                        <span className="ml-2 text-2xl">Bestellung</span>
                         {/* Show if waiter placed the order (green) */}
                         {isWaiterOrder && (
-                          <span className="ml-2 text-sm bg-green-500 text-white px-2 py-0.5 rounded">
+                          <span className="ml-2 text-base bg-green-500 text-white px-2 py-0.5 rounded">
                             von {order.orderedBy}
                           </span>
                         )}
                       </div>
                       {order.items && (
-                        <div className="space-y-1 text-xl">
+                        <div className="space-y-2 text-2xl">
                           {order.items.map((item, idx) => (
-                            <div key={idx} className="flex justify-between">
+                            <div key={idx} className="flex justify-between gap-4">
                               <span>{item.quantity}x {item.name}</span>
                               <span>{(item.price * item.quantity).toFixed(2)} €</span>
                             </div>
                           ))}
-                          <div className="border-t border-white/30 pt-2 mt-2 font-bold text-2xl">
+                          <div className="border-t border-white/30 pt-3 mt-3 font-bold text-3xl">
                             Gesamt: {order.total?.toFixed(2)} €
                           </div>
                         </div>
