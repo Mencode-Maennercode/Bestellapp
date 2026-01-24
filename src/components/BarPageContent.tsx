@@ -647,7 +647,8 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
             <p className="text-2xl text-gray-500">Keine aktiven Meldungen</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-3">
+          {/* Maximal 6 Bestellungen pro Zeile im Browser-Modus, Kacheln etwas größer */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-4">
             {getFilteredOrders().map((order) => {
               const phase = getAlertPhase(order.timestamp);
               const assignedWaiters = getWaitersForTableNum(order.tableNumber);
@@ -683,7 +684,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                   onMouseDown={handleBarLongPressStart}
                   onMouseUp={handleBarLongPressEnd}
                   onMouseLeave={handleBarLongPressEnd}
-                  className={`rounded-xl p-4 mb-3 cursor-pointer transition-all hover:opacity-80 text-white ${getAlertClass(phase)}`}
+                  className={`rounded-2xl p-5 mb-4 cursor-pointer transition-all hover:opacity-80 text-white text-lg ${getAlertClass(phase)}`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>
