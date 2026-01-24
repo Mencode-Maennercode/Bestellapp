@@ -504,8 +504,8 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
       if (historyArray.length > 10) {
         // Remove oldest entries
         const toKeep = historyArray.slice(0, 10);
-        const newHistory = {};
-        toKeep.forEach((entry, index) => {
+        const newHistory: { [key: string]: any } = {};
+        toKeep.forEach((entry: any, index: number) => {
           // Find the original key or create a new one
           const originalKey = Object.keys(currentHistory).find(key => 
             currentHistory[key].timestamp === entry.timestamp
