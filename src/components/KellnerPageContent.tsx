@@ -263,6 +263,9 @@ export default function WaiterPage() {
   // Für den Tisch collapsible state
   const [showTableProducts, setShowTableProducts] = useState(false);
   
+  // Footer collapsible state
+  const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
+  
   // PWA install state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
@@ -1681,9 +1684,20 @@ export default function WaiterPage() {
         </div>
       )}
 
-      {/* Footer with Quick Order Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-8 z-40">
-        <div className="max-w-lg mx-auto space-y-3">
+      {/* Footer with Quick Order Buttons - Collapsible */}
+      <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 transition-all duration-300 ${isFooterCollapsed ? 'p-2' : 'p-4 pb-8'}`}>
+        <div className="max-w-lg mx-auto">
+          {/* Toggle Button */}
+          <div className="flex justify-center mb-2">
+            <button
+              onClick={() => setIsFooterCollapsed(!isFooterCollapsed)}
+              className="px-3 py-1 rounded-lg text-xs font-medium bg-gray-100 hover:bg-gray-200 transition-colors"
+            >
+              {isFooterCollapsed ? '📂 Aufklappen' : '📁 Einklappen'}
+            </button>
+          </div>
+          
+          {/* Table Buttons - Always Visible */}
           <div className="flex flex-wrap gap-2 justify-center">
             {assignedTables.map((tableNum) => {
               const isCustom = tableNum >= 1000;
@@ -1713,32 +1727,38 @@ export default function WaiterPage() {
               +/- Tisch
             </button>
           </div>
-          {/* App Download Button in Footer - always visible for testing */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleInstallPWA}
-              className="px-6 py-2 rounded-xl font-bold text-sm bg-green-500 text-white active:scale-95 transition-transform shadow-sm"
-            >
-              📲 Als App installieren
-            </button>
-          </div>
           
-          {/* Footer Links */}
-          <div className="flex justify-center gap-4 mt-4 pb-4">
-            <span className="text-xs text-gray-500">© 2026 PräsenzWert</span>
-            <button
-              onClick={() => router.push('/impressum')}
-              className="text-xs text-gray-600 hover:text-gray-800 underline"
-            >
-              Impressum
-            </button>
-            <button
-              onClick={() => router.push('/datenschutz')}
-              className="text-xs text-gray-600 hover:text-gray-800 underline"
-            >
-              Datenschutz
-            </button>
-          </div>
+          {/* Expanded Content - Only visible when not collapsed */}
+          {!isFooterCollapsed && (
+            <div className="space-y-3 mt-3">
+              {/* App Download Button in Footer - always visible for testing */}
+              <div className="flex justify-center">
+                <button
+                  onClick={handleInstallPWA}
+                  className="px-6 py-2 rounded-xl font-bold text-sm bg-green-500 text-white active:scale-95 transition-transform shadow-sm"
+                >
+                  📲 Als App installieren
+                </button>
+              </div>
+              
+              {/* Footer Links */}
+              <div className="flex justify-center gap-4 mt-4 pb-4">
+                <span className="text-xs text-gray-500">© 2026 PräsenzWert</span>
+                <button
+                  onClick={() => router.push('/impressum')}
+                  className="text-xs text-gray-600 hover:text-gray-800 underline"
+                >
+                  Impressum
+                </button>
+                <button
+                  onClick={() => router.push('/datenschutz')}
+                  className="text-xs text-gray-600 hover:text-gray-800 underline"
+                >
+                  Datenschutz
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
