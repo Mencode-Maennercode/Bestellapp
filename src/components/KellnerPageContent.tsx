@@ -135,7 +135,8 @@ class AlarmSystem {
 // Global alarm instance
 const alarm = typeof window !== 'undefined' ? new AlarmSystem() : null;
 
-export default function WaiterPage() {
+// Kellner Page Component
+export default function KellnerPageContent({ code }: { code: string }) {
   const [waiterName, setWaiterName] = useState('');
   const [assignedTables, setAssignedTables] = useState<number[]>([]);
   const [isSetup, setIsSetup] = useState(false);
