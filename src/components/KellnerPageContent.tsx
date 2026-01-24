@@ -1794,7 +1794,7 @@ export default function KellnerPageContent({ code }: { code: string }) {
                     return (
                       <button
                         key={tableNum}
-                        onClick={() => handleQuickOrder(tableNum)}
+                        onClick={() => handleOpenOrderForm(tableNum)}
                         className={`px-4 py-3 rounded-xl font-bold text-lg transition-all ${
                           hasNewOrders 
                             ? 'bg-orange-500 text-white shadow-lg animate-pulse' 
@@ -1820,7 +1820,7 @@ export default function KellnerPageContent({ code }: { code: string }) {
                     return (
                       <button
                         key={tableNum}
-                        onClick={() => handleQuickOrder(tableNum)}
+                        onClick={() => handleOpenOrderForm(tableNum)}
                         className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
                           hasNewOrders 
                             ? 'bg-orange-500 text-white shadow-lg' 
