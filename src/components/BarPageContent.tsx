@@ -813,7 +813,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
                               <span>{(item.price * item.quantity).toFixed(2)} €</span>
                             </div>
                           ))}
-                          <div className="border-t border-white/30 pt-4 mt-4 font-bold text-3xl">
+                          <div className="border-t border-white/30 pt-4 mt-6 font-bold text-3xl">
                             Gesamt: {order.total?.toFixed(2)} €
                           </div>
                         </div>
