@@ -1,8 +1,7 @@
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-
-const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
+import { isValidAuthCode } from '@/lib/auth';
 
 const KellnerPageContent = dynamic(() => import('../../components/KellnerPageContent'), { ssr: false });
 
@@ -15,7 +14,7 @@ export default function ProtectedKellnerPage() {
   useEffect(() => {
     if (!code) return;
     
-    if (code === ADMIN_CODE) {
+    if (isValidAuthCode(code as string)) {
       setAuthorized(true);
     }
     setChecking(false);
