@@ -1771,12 +1771,11 @@ export default function KellnerPageContent({ code }: { code: string }) {
         </div>
       )}
 
-      {/* Footer with Table Badges - Collapsible */}
+      {/* Footer with Quick Order Buttons - Collapsible */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
         <div className="max-w-lg mx-auto">
           <div className="p-4 pb-2">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-bold text-gray-700">Erste Tische</span>
+            <div className="flex justify-end items-center mb-2">
               <button
                 onClick={() => setIsFooterCollapsed(!isFooterCollapsed)}
                 className="px-3 py-1 rounded-lg text-sm bg-gray-200 text-gray-700"
@@ -1786,9 +1785,8 @@ export default function KellnerPageContent({ code }: { code: string }) {
             </div>
             {!isFooterCollapsed && (
               <>
-                {/* Show first 6 tables as badges */}
                 <div className="flex flex-wrap gap-2 justify-center mb-3">
-                  {assignedTables.slice(0, 6).map((tableNum) => {
+                  {assignedTables.map((tableNum) => {
                     const tableOrders = orders.filter(order => order.tableNumber === tableNum);
                     const hasNewOrders = tableOrders.length > 0;
                     return (
@@ -1812,32 +1810,7 @@ export default function KellnerPageContent({ code }: { code: string }) {
                   })}
                 </div>
                 
-                {/* Show remaining tables and additional options */}
                 <div className="flex flex-wrap gap-2 justify-center">
-                  {assignedTables.slice(6).map((tableNum) => {
-                    const tableOrders = orders.filter(order => order.tableNumber === tableNum);
-                    const hasNewOrders = tableOrders.length > 0;
-                    return (
-                      <button
-                        key={tableNum}
-                        onClick={() => handleOpenOrderForm(tableNum)}
-                        className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
-                          hasNewOrders 
-                            ? 'bg-orange-500 text-white shadow-lg' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        {getTableNameSync(tableNum)}
-                        {hasNewOrders && (
-                          <span className="ml-1 bg-red-600 text-white text-xs rounded-full px-1">
-                            {tableOrders.length}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                  
-                  {/* Additional options */}
                   <button
                     onClick={() => setShowFreeBookingModal(true)}
                     className="px-3 py-2 rounded-lg font-bold text-sm bg-green-500 text-white hover:bg-green-600 transition-colors"
