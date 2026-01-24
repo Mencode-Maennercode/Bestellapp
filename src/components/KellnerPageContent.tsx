@@ -264,7 +264,7 @@ export default function WaiterPage() {
   const [showTableProducts, setShowTableProducts] = useState(false);
   
   // Footer collapsible state
-  const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
+  const [isFooterCollapsed, setIsFooterCollapsed] = useState(true);
   
   // PWA install state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -1691,9 +1691,16 @@ export default function WaiterPage() {
           <div className="flex justify-center mb-2">
             <button
               onClick={() => setIsFooterCollapsed(!isFooterCollapsed)}
-              className="px-3 py-1 rounded-lg text-xs font-medium bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
             >
-              {isFooterCollapsed ? '📂 Aufklappen' : '📁 Einklappen'}
+              <svg 
+                className={`w-4 h-4 transition-transform duration-300 ${isFooterCollapsed ? 'rotate-180' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
           </div>
           
