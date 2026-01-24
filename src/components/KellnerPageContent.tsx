@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { database, ref, onValue, remove, push, set } from '@/lib/firebase';
+import { database, ref, onValue, remove, push, set, getFCMToken, saveWaiterFCMToken, onForegroundMessage, removeWaiterFCMToken } from '@/lib/firebase';
 import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
 import { getMenuConfiguration, type MenuConfiguration, getDrinkDatabase, type DrinkDatabase, getCategoryDatabase } from '@/lib/menuManager';
-import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, saveWaiterAssignment, getContrastTextColor } from '@/lib/settings';
+import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, saveWaiterAssignment, getContrastTextColor, getCachedSettings } from '@/lib/settings';
 import { getActualGeneratedTableNumbers } from '@/lib/tables';
 import { getTableByNumber } from '@/lib/dynamicTables';
 import TablePlanCarousel from '@/components/TablePlanCarousel';
@@ -211,8 +211,8 @@ export default function WaiterPage() {
   // Statistics for sorting by table orders
   const [statistics, setStatistics] = useState<{ tables: { [key: number]: { items: { [key: string]: { quantity: number } } } } }>({ tables: {} });
   
-  // Settings integration
-  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  // Settings integration - use cached settings for instant color loading
+  const [settings, setSettings] = useState<AppSettings>(() => getCachedSettings());
   const [broadcast, setBroadcast] = useState<BroadcastMessage | null>(null);
   
   // Collapsible state for "Für den ganzen Tisch" (waiter modal)
@@ -468,6 +468,19 @@ export default function WaiterPage() {
       setIsSetup(true);
       // Clear manual reset flag since user is now properly logged in again
       setManualResetInProgress(false);
+      
+      // Re-register FCM token on page load (token may have expired)
+      (async () => {
+        try {
+          const fcmToken = await getFCMToken();
+          if (fcmToken) {
+            await saveWaiterFCMToken(savedName, fcmToken);
+            console.log('FCM token refreshed for:', savedName);
+          }
+        } catch (error) {
+          console.error('FCM refresh error:', error);
+        }
+      })();
     }
     
     // Clear self-refresh flag after a short delay to allow Bar-triggered resets to work
@@ -477,6 +490,26 @@ export default function WaiterPage() {
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle FCM foreground messages - trigger alarm when notification arrives while app is open
+  useEffect(() => {
+    if (!isSetup || !waiterName) return;
+    
+    const unsubscribe = onForegroundMessage((payload) => {
+      console.log('Foreground FCM message:', payload);
+      // Trigger the alarm system for foreground messages too
+      if (alarmEnabled && alarm) {
+        alarm.startAlarm();
+        setAlarmActive(true);
+      }
+      // Also trigger vibration
+      if (navigator.vibrate) {
+        navigator.vibrate([500, 200, 500, 200, 500, 200, 500]);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [isSetup, waiterName, alarmEnabled]);
 
   // Listen to Firebase waiter assignments to detect if current waiter's assignment is removed
   useEffect(() => {
@@ -610,6 +643,18 @@ export default function WaiterPage() {
     
     // Save to Firebase for multi-waiter tracking
     await saveWaiterAssignment(waiterName, assignedTables);
+    
+    // Register for FCM push notifications
+    try {
+      const fcmToken = await getFCMToken();
+      if (fcmToken) {
+        await saveWaiterFCMToken(waiterName, fcmToken);
+        console.log('FCM Push Notifications aktiviert für:', waiterName);
+      }
+    } catch (error) {
+      console.error('FCM registration error:', error);
+      // Don't block setup if FCM fails
+    }
     
     // Clear manual reset flag since user is now properly logged in again
     setManualResetInProgress(false);

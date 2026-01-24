@@ -956,10 +956,7 @@ const Produkte: NextPage = () => {
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <Link href="/" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-                ← Zurück zur Startseite
-              </Link>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">🍺 Produkte & Preise</h1>
+                            <h1 className="text-4xl font-bold text-gray-900 mb-2">🍺 Produkte & Preise</h1>
               <p className="text-gray-600">Übersicht aller verfügbaren Produkte und Preise</p>
             </div>
             <div className="text-right">

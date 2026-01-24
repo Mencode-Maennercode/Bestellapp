@@ -1,54 +1,85 @@
 // Firebase Messaging Service Worker for Push Notifications
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+// Using Firebase v10 compat for service worker
+importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
-// Firebase config will be passed via postMessage
-let firebaseConfig = null;
+// Firebase configuration - hardcoded for service worker (env vars not available)
+// These will be replaced at build time or you can hardcode them
+const firebaseConfig = {
+  apiKey: "AIzaSyBXkAeLoFdv_kDV5N1sYIqF6rKLuOWCL3Y",
+  authDomain: "karneval-bestellsystem.firebaseapp.com",
+  databaseURL: "https://karneval-bestellsystem-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "karneval-bestellsystem",
+  storageBucket: "karneval-bestellsystem.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
 
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'FIREBASE_CONFIG') {
-    firebaseConfig = event.data.config;
-    initializeFirebase();
-  }
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+// Handle background messages
+messaging.onBackgroundMessage((payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message:', payload);
+  
+  const notificationTitle = payload.notification?.title || '🍺 Neue Bestellung!';
+  const notificationOptions = {
+    body: payload.notification?.body || 'Eine neue Bestellung ist eingegangen.',
+    icon: '/icons/waiters.png',
+    badge: '/icons/waiters.png',
+    // IMPORTANT: Long vibration pattern for background notifications
+    vibrate: [500, 200, 500, 200, 500, 200, 500, 200, 500],
+    tag: 'order-notification-' + Date.now(),
+    requireInteraction: true, // Keep notification until user interacts
+    renotify: true, // Vibrate again even if same tag
+    silent: false, // Ensure sound plays
+    data: payload.data,
+    actions: [
+      { action: 'open', title: '📱 Öffnen' },
+      { action: 'dismiss', title: '❌ Später' }
+    ]
+  };
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-function initializeFirebase() {
-  if (!firebaseConfig) return;
-  
-  firebase.initializeApp(firebaseConfig);
-  const messaging = firebase.messaging();
-
-  messaging.onBackgroundMessage((payload) => {
-    console.log('Received background message:', payload);
-    
-    const notificationTitle = payload.notification?.title || 'Neue Bestellung!';
-    const notificationOptions = {
-      body: payload.notification?.body || 'Eine neue Bestellung ist eingegangen.',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
-      vibrate: [200, 100, 200, 100, 200, 100, 400],
-      tag: 'order-notification',
-      requireInteraction: true,
-      data: payload.data
-    };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
-  });
-}
-
+// Handle notification click
 self.addEventListener('notificationclick', (event) => {
+  console.log('[firebase-messaging-sw.js] Notification clicked:', event.action);
   event.notification.close();
   
+  if (event.action === 'dismiss') {
+    return;
+  }
+  
+  // Open or focus the kellner page
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Try to find and focus existing kellner window
       for (const client of clientList) {
         if (client.url.includes('/kellner') && 'focus' in client) {
           return client.focus();
         }
       }
+      // Open new window if none exists
       if (clients.openWindow) {
-        return clients.openWindow('/kellner/A267');
+        // Try to get the admin code from the notification data
+        const adminCode = event.notification.data?.adminCode || 'V26K';
+        return clients.openWindow('/kellner/' + adminCode);
       }
     })
   );
+});
+
+// Handle service worker installation
+self.addEventListener('install', (event) => {
+  console.log('[firebase-messaging-sw.js] Service Worker installed');
+  self.skipWaiting();
+});
+
+// Handle service worker activation
+self.addEventListener('activate', (event) => {
+  console.log('[firebase-messaging-sw.js] Service Worker activated');
+  event.waitUntil(clients.claim());
 });

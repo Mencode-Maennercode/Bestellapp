@@ -376,12 +376,48 @@ export const translations: Record<Language, Record<string, string>> = {
 
 // ============ SETTINGS MANAGEMENT ============
 
+// LocalStorage key for caching settings
+const SETTINGS_CACHE_KEY = 'karneval_settings_cache';
+
+// Get cached settings from localStorage (for instant loading)
+export function getCachedSettings(): AppSettings {
+  if (typeof window === 'undefined') return defaultSettings;
+  try {
+    const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return { ...defaultSettings, ...parsed };
+    }
+  } catch (error) {
+    console.error('Error reading cached settings:', error);
+  }
+  return defaultSettings;
+}
+
+// Save settings to localStorage cache
+function cacheSettings(settings: AppSettings): void {
+  if (typeof window === 'undefined') return;
+  try {
+    // Only cache essential display settings (colors, language) to keep it small
+    const toCache = {
+      colors: settings.colors,
+      language: settings.language,
+      logo: settings.logo
+    };
+    localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(toCache));
+  } catch (error) {
+    console.error('Error caching settings:', error);
+  }
+}
+
 export async function getSettings(): Promise<AppSettings> {
   try {
     const settingsRef = ref(database, 'settings');
     const snapshot = await get(settingsRef);
     if (snapshot.exists()) {
-      return { ...defaultSettings, ...snapshot.val() };
+      const settings = { ...defaultSettings, ...snapshot.val() };
+      cacheSettings(settings); // Cache for next load
+      return settings;
     }
     return defaultSettings;
   } catch (error) {
@@ -406,7 +442,9 @@ export function subscribeToSettings(callback: (settings: AppSettings) => void): 
   const settingsRef = ref(database, 'settings');
   const unsubscribe = onValue(settingsRef, (snapshot) => {
     if (snapshot.exists()) {
-      callback({ ...defaultSettings, ...snapshot.val() });
+      const settings = { ...defaultSettings, ...snapshot.val() };
+      cacheSettings(settings); // Cache for instant loading on next visit
+      callback(settings);
     } else {
       callback(defaultSettings);
     }
@@ -589,7 +627,14 @@ export function subscribeToBroadcast(callback: (broadcast: BroadcastMessage | nu
   const broadcastRef = ref(database, 'broadcast');
   const unsubscribe = onValue(broadcastRef, (snapshot) => {
     if (snapshot.exists()) {
-      callback(snapshot.val());
+      const broadcast = snapshot.val() as BroadcastMessage;
+      // Auto-hide broadcast messages older than 1 hour (3600000 ms)
+      const ONE_HOUR_MS = 60 * 60 * 1000;
+      if (broadcast.timestamp && Date.now() - broadcast.timestamp > ONE_HOUR_MS) {
+        callback(null); // Message is too old, don't show it
+      } else {
+        callback(broadcast);
+      }
     } else {
       callback(null);
     }

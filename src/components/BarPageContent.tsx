@@ -544,7 +544,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0f1419 0%, #1a1f26 100%)' }}>
       {/* Modern Header */}
       <header className="sticky top-0 z-10 border-b border-white/5" style={{ background: 'rgba(15,20,25,0.95)', backdropFilter: 'blur(12px)' }}>
-        <div className="max-w-7xl mx-auto px-4 py-3">
+        <div className="w-full px-4 py-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-xl font-bold">
@@ -640,14 +640,14 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
       )}
 
       {/* Orders Grid */}
-      <div className="max-w-6xl mx-auto p-4">
+      <div className="w-full p-4">
         {getFilteredOrders().length === 0 ? (
           <div className="text-center py-20">
             <p className="text-4xl mb-4">☕</p>
             <p className="text-2xl text-gray-500">Keine aktiven Meldungen</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-3">
             {getFilteredOrders().map((order) => {
               const phase = getAlertPhase(order.timestamp);
               const assignedWaiters = getWaitersForTableNum(order.tableNumber);

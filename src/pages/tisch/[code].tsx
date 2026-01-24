@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { database, ref, push, onValue } from '@/lib/firebase';
 import { getTableByCode, isValidTableCode } from '@/lib/dynamicTables';
 import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
-import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, getContrastTextColor } from '@/lib/settings';
+import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, getContrastTextColor, getCachedSettings } from '@/lib/settings';
 import { getMenuConfiguration, MenuConfiguration, getCategoryDatabase, getDrinkDatabase, DrinkDatabase } from '@/lib/menuManager';
 import PraesenzWertBanner from '@/components/PraesenzWertBanner';
 import PraesenzWertPopup from '@/components/PraesenzWertPopup';
@@ -35,7 +35,8 @@ export default function TablePage() {
   const [orderSent, setOrderSent] = useState(false);
   const [waiterCalled, setWaiterCalled] = useState(false);
   const [waiterCooldown, setWaiterCooldown] = useState(0);
-  const [settings, setSettings] = useState<AppSettings | null>(null);
+  // Use cached settings initially for instant color display
+  const [settings, setSettings] = useState<AppSettings>(() => getCachedSettings());
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [broadcast, setBroadcast] = useState<BroadcastMessage | null>(null);
   const [orderHistory, setOrderHistory] = useState<OrderHistory[]>([]);
