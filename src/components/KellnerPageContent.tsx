@@ -266,6 +266,9 @@ export default function WaiterPage() {
   // Footer collapsible state
   const [isFooterCollapsed, setIsFooterCollapsed] = useState(true);
   
+  // Header collapsible state
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(true);
+  
   // PWA install state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
@@ -1461,62 +1464,88 @@ export default function WaiterPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="p-4 sticky top-0 z-10 shadow-lg" style={{ 
+      {/* Header - Collapsible */}
+      <div className={`sticky top-0 z-10 shadow-lg transition-all duration-300 ${isHeaderCollapsed ? 'h-12' : ''}`} style={{ 
         backgroundColor: settings.colors.primaryKellner,
         color: getContrastTextColor(settings.colors.primaryKellner)
       }}>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-xl font-bold">👤 {waiterName}</h1>
-              <p className="text-sm opacity-80">
-                Tische: {assignedTables.length > 0 ? assignedTables.map(t => getTableNameSync(t)).join(', ') : 'Keine Tische zugewiesen'}
-              </p>
-            </div>
-            <button
-              onClick={() => setShowResetConfirmModal(true)}
-              className="px-3 py-2 rounded-lg text-sm"
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.3)',
-                color: getContrastTextColor(settings.colors.primaryKellner)
-              }}
+        {/* Toggle Button */}
+        <div className="flex justify-center pt-1">
+          <button
+            onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+            className="w-6 h-6 flex items-center justify-center rounded-full opacity-70 hover:opacity-100 transition-opacity"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              color: getContrastTextColor(settings.colors.primaryKellner)
+            }}
+          >
+            <svg 
+              className={`w-3 h-3 transition-transform duration-300 ${isHeaderCollapsed ? '' : 'rotate-180'}`}
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
             >
-              🔄
-            </button>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {(settings.tablePlans && settings.tablePlans.length > 0) && (
-              <button
-                onClick={() => setShowTablePlan(true)}
-                className="px-3 py-2 rounded-lg text-sm"
-                style={{
-                  backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                  color: getContrastTextColor(settings.colors.primaryKellner)
-                }}
-              >
-                🗺️ Pläne ({settings.tablePlans.length})
-              </button>
-            )}
-            <button
-              onClick={handleTestAlarm}
-              className="px-3 py-2 rounded-lg text-sm"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: getContrastTextColor(settings.colors.primaryKellner)
-              }}
-            >
-              🔊 Test
-            </button>
-          </div>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
-        {alarmEnabled && (
-          <div className="mt-2 rounded-lg px-3 py-1 text-sm text-center"
-               style={{
-                 backgroundColor: '#10b981',
-                 color: getContrastTextColor('#10b981')
-               }}>
-            ✅ Alarm aktiv - Handy laut lassen!
+        
+        {/* Header Content - Only visible when not collapsed */}
+        {!isHeaderCollapsed && (
+          <div className="p-4 pt-2">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h1 className="text-xl font-bold">👤 {waiterName}</h1>
+                  <p className="text-sm opacity-80">
+                    Tische: {assignedTables.length > 0 ? assignedTables.map(t => getTableNameSync(t)).join(', ') : 'Keine Tische zugewiesen'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowResetConfirmModal(true)}
+                  className="px-3 py-2 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                    color: getContrastTextColor(settings.colors.primaryKellner)
+                  }}
+                >
+                  🔄
+                </button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {(settings.tablePlans && settings.tablePlans.length > 0) && (
+                  <button
+                    onClick={() => setShowTablePlan(true)}
+                    className="px-3 py-2 rounded-lg text-sm"
+                    style={{
+                      backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                      color: getContrastTextColor(settings.colors.primaryKellner)
+                    }}
+                  >
+                    🗺️ Pläne ({settings.tablePlans.length})
+                  </button>
+                )}
+                <button
+                  onClick={handleTestAlarm}
+                  className="px-3 py-2 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    color: getContrastTextColor(settings.colors.primaryKellner)
+                  }}
+                >
+                  🔊 Test
+                </button>
+              </div>
+            </div>
+            {alarmEnabled && (
+              <div className="mt-2 rounded-lg px-3 py-1 text-sm text-center"
+                   style={{
+                     backgroundColor: '#10b981',
+                     color: getContrastTextColor('#10b981')
+                   }}>
+                ✅ Alarm aktiv - Handy laut lassen!
+              </div>
+            )}
           </div>
         )}
       </div>
