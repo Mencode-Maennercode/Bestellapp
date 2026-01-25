@@ -1,20 +1,21 @@
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { isValidAuthCode } from '@/lib/auth';
+
+const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || 'V26K';
 
 const QRCodesPageContent = dynamic(() => import('../../components/QRCodesPageContent'), { ssr: false });
 
 export default function ProtectedQRCodesPage() {
-  const [authorized, setAuthorized] = useState(false);
-  const [checking, setChecking] = useState(true);
   const router = useRouter();
   const { code } = router.query;
+  const [authorized, setAuthorized] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     if (!code) return;
     
-    if (isValidAuthCode(code as string)) {
+    if (code === ADMIN_CODE) {
       setAuthorized(true);
     }
     setChecking(false);

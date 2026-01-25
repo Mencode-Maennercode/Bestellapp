@@ -1,0 +1,81 @@
+[debug] [2026-01-25T00:03:43.761Z] ----------------------------------------------------------------------
+[debug] [2026-01-25T00:03:43.767Z] Command:       C:\nvm4w\nodejs\node.exe C:\nvm4w\nodejs\node_modules\firebase-tools\lib\bin\firebase.js database:set /statistics {}
+[debug] [2026-01-25T00:03:43.768Z] CLI Version:   15.1.0
+[debug] [2026-01-25T00:03:43.768Z] Platform:      win32
+[debug] [2026-01-25T00:03:43.768Z] Node Version:  v20.19.2
+[debug] [2026-01-25T00:03:43.768Z] Time:          Sun Jan 25 2026 01:03:43 GMT+0100 (Mitteleuropäische Normalzeit)
+[debug] [2026-01-25T00:03:43.769Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-01-25T00:03:47.029Z] Object "/functions" in "firebase.json" has unknown property: {"additionalProperty":"region"}
+[debug] [2026-01-25T00:03:47.029Z] Object "/functions" in "firebase.json" is missing required property: {"missingProperty":"remoteSource"}
+[debug] [2026-01-25T00:03:47.029Z] Field "/functions" in "firebase.json" is possibly invalid: must be array
+[debug] [2026-01-25T00:03:47.030Z] Field "/functions" in "firebase.json" is possibly invalid: must match a schema in anyOf
+[debug] [2026-01-25T00:03:47.039Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-25T00:03:47.040Z] > authorizing via signed-in user (heidenreich89@gmail.com)
+[debug] [2026-01-25T00:03:47.040Z] [iam] checking project karneval-acfff for permissions ["firebase.projects.get","firebasedatabase.instances.update"]
+[debug] [2026-01-25T00:03:47.043Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:03:47.043Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:03:47.046Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions [none]
+[debug] [2026-01-25T00:03:47.046Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions x-goog-quota-user=projects/karneval-acfff
+[debug] [2026-01-25T00:03:47.046Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.update"]}
+[debug] [2026-01-25T00:03:47.967Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions 200
+[debug] [2026-01-25T00:03:47.969Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.update"]}
+[debug] [2026-01-25T00:03:47.972Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:03:47.973Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:03:47.974Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/karneval-acfff [none]
+[debug] [2026-01-25T00:03:48.575Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/karneval-acfff 200
+[debug] [2026-01-25T00:03:48.576Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/karneval-acfff {"projectId":"karneval-acfff","projectNumber":"485865467408","displayName":"Karneval","name":"projects/karneval-acfff","resources":{"hostingSite":"karneval-acfff","realtimeDatabaseInstance":"karneval-acfff-default-rtdb"},"state":"ACTIVE","etag":"1_07170eb7-1922-494c-b8d5-35a79d340509"}
+[debug] [2026-01-25T00:03:48.576Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:03:48.576Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:03:48.577Z] >>> [apiv2][query] GET https://firebasedatabase.googleapis.com/v1beta/projects/karneval-acfff/locations/-/instances/karneval-acfff-default-rtdb [none]
+[debug] [2026-01-25T00:03:49.417Z] <<< [apiv2][status] GET https://firebasedatabase.googleapis.com/v1beta/projects/karneval-acfff/locations/-/instances/karneval-acfff-default-rtdb 200
+[debug] [2026-01-25T00:03:49.418Z] <<< [apiv2][body] GET https://firebasedatabase.googleapis.com/v1beta/projects/karneval-acfff/locations/-/instances/karneval-acfff-default-rtdb {"name":"projects/485865467408/locations/europe-west1/instances/karneval-acfff-default-rtdb","project":"projects/485865467408","databaseUrl":"https://karneval-acfff-default-rtdb.europe-west1.firebasedatabase.app","type":"DEFAULT_DATABASE","state":"ACTIVE"}
+[debug] [2026-01-25T00:04:42.251Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:04:42.252Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:04:42.253Z] >>> [apiv2][query] PUT https://karneval-acfff-default-rtdb.europe-west1.firebasedatabase.app/statistics.json 
+[debug] [2026-01-25T00:04:42.253Z] >>> [apiv2][body] PUT https://karneval-acfff-default-rtdb.europe-west1.firebasedatabase.app/statistics.json [stream]
+[debug] [2026-01-25T00:05:23.714Z] ----------------------------------------------------------------------
+[debug] [2026-01-25T00:05:23.720Z] Command:       C:\nvm4w\nodejs\node.exe C:\nvm4w\nodejs\node_modules\firebase-tools\lib\bin\firebase.js database:set /statistics {}
+[debug] [2026-01-25T00:05:23.721Z] CLI Version:   15.1.0
+[debug] [2026-01-25T00:05:23.721Z] Platform:      win32
+[debug] [2026-01-25T00:05:23.721Z] Node Version:  v20.19.2
+[debug] [2026-01-25T00:05:23.722Z] Time:          Sun Jan 25 2026 01:05:23 GMT+0100 (Mitteleuropäische Normalzeit)
+[debug] [2026-01-25T00:05:23.722Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-01-25T00:05:27.248Z] Object "/functions" in "firebase.json" has unknown property: {"additionalProperty":"region"}
+[debug] [2026-01-25T00:05:27.249Z] Object "/functions" in "firebase.json" is missing required property: {"missingProperty":"remoteSource"}
+[debug] [2026-01-25T00:05:27.249Z] Field "/functions" in "firebase.json" is possibly invalid: must be array
+[debug] [2026-01-25T00:05:27.249Z] Field "/functions" in "firebase.json" is possibly invalid: must match a schema in anyOf
+[debug] [2026-01-25T00:05:27.259Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-25T00:05:27.260Z] > authorizing via signed-in user (heidenreich89@gmail.com)
+[debug] [2026-01-25T00:05:27.260Z] [iam] checking project karneval-acfff for permissions ["firebase.projects.get","firebasedatabase.instances.update"]
+[debug] [2026-01-25T00:05:27.262Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:05:27.263Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:05:27.265Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions [none]
+[debug] [2026-01-25T00:05:27.266Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions x-goog-quota-user=projects/karneval-acfff
+[debug] [2026-01-25T00:05:27.266Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.update"]}
+[debug] [2026-01-25T00:05:27.685Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions 200
+[debug] [2026-01-25T00:05:27.685Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/karneval-acfff:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.update"]}
+[debug] [2026-01-25T00:05:27.686Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:05:27.686Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:05:27.689Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/karneval-acfff [none]
+[debug] [2026-01-25T00:05:28.076Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/karneval-acfff 200
+[debug] [2026-01-25T00:05:28.076Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/karneval-acfff {"projectId":"karneval-acfff","projectNumber":"485865467408","displayName":"Karneval","name":"projects/karneval-acfff","resources":{"hostingSite":"karneval-acfff","realtimeDatabaseInstance":"karneval-acfff-default-rtdb"},"state":"ACTIVE","etag":"1_07170eb7-1922-494c-b8d5-35a79d340509"}
+[debug] [2026-01-25T00:05:28.076Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:05:28.076Z] Checked if tokens are valid: true, expires at: 1769301224804
+[debug] [2026-01-25T00:05:28.077Z] >>> [apiv2][query] GET https://firebasedatabase.googleapis.com/v1beta/projects/karneval-acfff/locations/-/instances/karneval-acfff-default-rtdb [none]
+[debug] [2026-01-25T00:05:28.964Z] <<< [apiv2][status] GET https://firebasedatabase.googleapis.com/v1beta/projects/karneval-acfff/locations/-/instances/karneval-acfff-default-rtdb 200
+[debug] [2026-01-25T00:05:28.965Z] <<< [apiv2][body] GET https://firebasedatabase.googleapis.com/v1beta/projects/karneval-acfff/locations/-/instances/karneval-acfff-default-rtdb {"name":"projects/485865467408/locations/europe-west1/instances/karneval-acfff-default-rtdb","project":"projects/485865467408","databaseUrl":"https://karneval-acfff-default-rtdb.europe-west1.firebasedatabase.app","type":"DEFAULT_DATABASE","state":"ACTIVE"}
+[debug] [2026-01-25T00:05:48.047Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (C:\Users\Heidenreich\AppData\Local\nvm\v20.19.2\node_modules\firebase-tools\node_modules\@inquirer\core\dist\commonjs\lib\create-prompt.js:101:37)
+    at Interface.emit (node:events:524:28)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1125:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:264:20)
+    at ReadStream.emit (node:events:536:35)
+    at emitKeys (node:internal/readline/utils:371:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+    at ReadStream.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+[error] 
+[error] Error: An unexpected error has occurred.
