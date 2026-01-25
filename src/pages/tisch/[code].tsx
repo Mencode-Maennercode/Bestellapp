@@ -1186,10 +1186,10 @@ export default function TablePage() {
 
         {/* PräsenzWert Info - direkt unter Bestellformular */}
         <div className="text-center space-y-2 mb-4">
-          <p className="text-white/70 text-sm">Bezahlung erfolgt am Tisch</p>
           <a href="https://praesenzwert.de" target="_blank" rel="noopener noreferrer" className="inline-block text-white/60 hover:text-white/80 text-xs">
             Präsentiert von <span className="font-semibold">PräsenzWert</span> & Dorfgarde Nierendorf
           </a>
+          <p className="text-white/70 text-sm">Bezahlung erfolgt am Tisch</p>
         </div>
 
         {/* PWA Install Button */}
