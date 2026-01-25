@@ -176,7 +176,7 @@ const DeveloperStatisticsContent: React.FC = () => {
           {/* Global Summary */}
           <div className="bg-gray-700 rounded-xl p-4 mb-6">
             <h3 className="text-xl font-bold text-purple-200 mb-3">📈 Gesamt</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-gray-600 rounded-lg p-3 text-center">
                 <p className="text-3xl font-bold text-purple-300">{currentStatistics.totalOrders}</p>
                 <p className="text-gray-300">Bestellungen</p>
@@ -185,6 +185,10 @@ const DeveloperStatisticsContent: React.FC = () => {
                 <p className="text-3xl font-bold text-green-400">{(currentStatistics.totalAmount || 0).toFixed(2)} €</p>
                 <p className="text-gray-300">Umsatz</p>
               </div>
+            </div>
+            <div className="bg-gray-600 rounded-lg p-3 text-center">
+              <p className="text-3xl font-bold text-orange-400">{((currentStatistics.totalAmount || 0) * 0.015).toFixed(2)} €</p>
+              <p className="text-gray-300">Live Berechnung (1,5%)</p>
             </div>
           </div>
 
