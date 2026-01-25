@@ -5,7 +5,7 @@ import { menuItems, categories, formatPrice, MenuItem } from '@/lib/menu';
 import { getMenuConfiguration, type MenuConfiguration, getDrinkDatabase, type DrinkDatabase, getCategoryDatabase } from '@/lib/menuManager';
 import { AppSettings, defaultSettings, subscribeToSettings, t, Language, BroadcastMessage, subscribeToBroadcast, markBroadcastAsRead, saveWaiterAssignment, getContrastTextColor } from '@/lib/settings';
 import { getActualGeneratedTableNumbers } from '@/lib/tables';
-import { getTableByNumber } from '@/lib/dynamicTables';
+import { getTableByNumber, getAllTables, type Table } from '@/lib/dynamicTables';
 import TablePlanCarousel from '@/components/TablePlanCarousel';
 
 interface Order {
@@ -143,6 +143,7 @@ export default function WaiterPage() {
   const [tableInput, setTableInput] = useState('');
   const [tableInputError, setTableInputError] = useState<string | null>(null);
   const [availableTables, setAvailableTables] = useState<number[]>([]);
+  const [customTablesFromDB, setCustomTablesFromDB] = useState<Table[]>([]);
   const [, setTick] = useState(0);
   const [lastOrderCount, setLastOrderCount] = useState(0);
   const [lastSeenOrderTime, setLastSeenOrderTime] = useState<number>(0);
@@ -279,6 +280,10 @@ export default function WaiterPage() {
     const loadTables = async () => {
       const tables = await getActualGeneratedTableNumbers();
       setAvailableTables(tables);
+      // Also load custom tables from database (number >= 1000)
+      const allTables = await getAllTables();
+      const customFromDB = allTables.filter(t => t.number >= 1000);
+      setCustomTablesFromDB(customFromDB);
     };
     loadTables();
   }, []);
@@ -1334,16 +1339,17 @@ export default function WaiterPage() {
             </div>
 
             {/* Custom Tables Quick Select */}
-            {(settings.customTables || []).length > 0 && (
+            {customTablesFromDB.length > 0 && (
               <div className="mb-6">
                 <label className="block text-slate-300 font-medium mb-2">🪑 Individuelle Tische</label>
                 <p className="text-xs text-slate-400 mb-3">
                   Klicke auf einen individuellen Tisch um ihn hinzuzufügen/zu entfernen:
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {settings.customTables?.map((table, index) => {
-                    const customTableNum = index + 1000;
+                  {customTablesFromDB.map((table) => {
+                    const customTableNum = table.number;
                     const isAssigned = assignedTables.includes(customTableNum);
+                    const displayName = table.name || `Tisch ${table.number}`;
                     return (
                       <button
                         key={table.id}
@@ -1363,7 +1369,7 @@ export default function WaiterPage() {
                             : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
                         }`}
                       >
-                        {table.name} {isAssigned ? '✓' : ''}
+                        {displayName} {isAssigned ? '✓' : ''}
                       </button>
                     );
                   })}
@@ -2531,13 +2537,14 @@ export default function WaiterPage() {
             </p>
             
             {/* Custom Tables Quick Add */}
-            {(settings.customTables || []).length > 0 && (
+            {customTablesFromDB.length > 0 && (
               <div className="mb-4">
                 <label className="block text-gray-700 font-bold mb-2">🪑 Individuelle Tische</label>
                 <div className="flex flex-wrap gap-2">
-                  {settings.customTables?.map((table, index) => {
-                    const customTableNum = index + 1000;
+                  {customTablesFromDB.map((table) => {
+                    const customTableNum = table.number;
                     const isAssigned = assignedTables.includes(customTableNum);
+                    const displayName = table.name || `Tisch ${table.number}`;
                     return (
                       <button
                         key={table.id}
@@ -2557,7 +2564,7 @@ export default function WaiterPage() {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
-                        {table.name} {isAssigned ? '✓' : '+'}
+                        {displayName} {isAssigned ? '✓' : '+'}
                       </button>
                     );
                   })}
@@ -2635,12 +2642,13 @@ export default function WaiterPage() {
             </p>
             
             {/* Custom Tables Quick Select */}
-            {(settings.customTables || []).length > 0 && (
+            {customTablesFromDB.length > 0 && (
               <div className="mb-4">
                 <label className="block text-gray-700 font-bold mb-2">🪑 Individuelle Tische</label>
                 <div className="flex flex-wrap gap-2">
-                  {settings.customTables?.map((table, index) => {
-                    const customTableNum = index + 1000;
+                  {customTablesFromDB.map((table) => {
+                    const customTableNum = table.number;
+                    const displayName = table.name || `Tisch ${table.number}`;
                     return (
                       <button
                         key={table.id}
@@ -2653,7 +2661,7 @@ export default function WaiterPage() {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
-                        {table.name}
+                        {displayName}
                       </button>
                     );
                   })}
