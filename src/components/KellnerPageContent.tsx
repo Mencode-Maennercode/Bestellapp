@@ -2609,15 +2609,19 @@ export default function WaiterPage() {
                   <div className="flex flex-wrap gap-2">
                     {assignedTables.map(num => {
                       const isCustom = num >= 1000;
-                      const customTable = isCustom ? settings.customTables?.[num - 1000] : null;
+                      let displayName = `T${num}`;
+                      if (isCustom) {
+                        const dbTable = customTablesFromDB.find(t => t.number === num);
+                        displayName = dbTable?.name || `T${num}`;
+                      }
                       return (
                         <button
                           key={num}
                           onClick={() => handleRemoveTable(num)}
                           className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-bold hover:bg-red-100 hover:text-red-700 transition-colors"
-                          title={`Tisch ${isCustom ? customTable?.name : num} entfernen`}
+                          title={`Tisch ${displayName} entfernen`}
                         >
-                          {isCustom ? customTable?.name : `T${num}`} ✕
+                          {displayName} ✕
                         </button>
                       );
                     })}
