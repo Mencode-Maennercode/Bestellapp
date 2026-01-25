@@ -1,48 +1,6 @@
 {
   "rules": {
-    "orders": {
-      ".read": true,
-      ".write": true
-    },
-    "bar": {
-      ".read": true,
-      ".write": true
-    },
-    "tables": {
-      ".read": true,
-      ".write": true
-    },
-    "waiterAssignments": {
-      ".read": true,
-      ".write": true
-    },
-    "system": {
-      ".read": true,
-      ".write": true
-    },
-    "config": {
-      ".read": true,
-      ".write": true
-    },
-    "database": {
-      ".read": true,
-      ".write": true
-    },
-    "statistics": {
-      ".read": true,
-      ".write": true
-    },
-    "settings": {
-      ".read": true,
-      ".write": true
-    },
-    "broadcast": {
-      ".read": true,
-      ".write": true
-    },
-    "$other": {
-      ".read": false,
-      ".write": false
-    }
+    ".read": true,
+    ".write": true
   }
 }
