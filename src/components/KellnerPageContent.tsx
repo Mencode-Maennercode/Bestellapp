@@ -1341,8 +1341,8 @@ export default function WaiterPage() {
                   Klicke auf einen individuellen Tisch um ihn hinzuzufügen/zu entfernen:
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {settings.customTables?.map((table) => {
-                    const customTableNum = (settings.customTables?.findIndex(t => t.id === table.id) || 0) + 1000;
+                  {settings.customTables?.map((table, index) => {
+                    const customTableNum = index + 1000;
                     const isAssigned = assignedTables.includes(customTableNum);
                     return (
                       <button
@@ -2535,8 +2535,8 @@ export default function WaiterPage() {
               <div className="mb-4">
                 <label className="block text-gray-700 font-bold mb-2">🪑 Individuelle Tische</label>
                 <div className="flex flex-wrap gap-2">
-                  {settings.customTables?.map((table) => {
-                    const customTableNum = (settings.customTables?.findIndex(t => t.id === table.id) || 0) + 1000;
+                  {settings.customTables?.map((table, index) => {
+                    const customTableNum = index + 1000;
                     const isAssigned = assignedTables.includes(customTableNum);
                     return (
                       <button
@@ -2639,23 +2639,24 @@ export default function WaiterPage() {
               <div className="mb-4">
                 <label className="block text-gray-700 font-bold mb-2">🪑 Individuelle Tische</label>
                 <div className="flex flex-wrap gap-2">
-                  {settings.customTables?.map((table) => (
-                    <button
-                      key={table.id}
-                      onClick={() => {
-                        // Use custom table - store name in a special way (negative ID based on index)
-                        const customIndex = (settings.customTables?.findIndex(t => t.id === table.id) || 0) + 1000;
-                        setFreeBookingTableNumber(customIndex);
-                      }}
-                      className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
-                        freeBookingTableNumber === ((settings.customTables?.findIndex(t => t.id === table.id) || 0) + 1000)
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {table.name}
-                    </button>
-                  ))}
+                  {settings.customTables?.map((table, index) => {
+                    const customTableNum = index + 1000;
+                    return (
+                      <button
+                        key={table.id}
+                        onClick={() => {
+                          setFreeBookingTableNumber(customTableNum);
+                        }}
+                        className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
+                          freeBookingTableNumber === customTableNum
+                            ? 'bg-amber-500 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {table.name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
