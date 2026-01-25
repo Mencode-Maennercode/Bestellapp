@@ -118,8 +118,6 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
   const [showProductsPanel, setShowProductsPanel] = useState(false);
   const [showStatsPanel, setShowStatsPanel] = useState(false);
   const [showBroadcastPanel, setShowBroadcastPanel] = useState(false);
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetPin, setResetPin] = useState('');
   const [resetting, setResetting] = useState(false);
   const [showWaiterResetModal, setShowWaiterResetModal] = useState(false);
   const [pageLoadTime] = useState(() => Date.now()); // Track when page was loaded
@@ -469,9 +467,6 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
   };
 
   const handleResetStatistics = async () => {
-    const ok = await verifyAdminPin(resetPin);
-    if (!ok) { alert('Falscher PIN!'); return; }
-
     setResetting(true);
     try {
       // Save current statistics to history before resetting (silent)
@@ -519,8 +514,6 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
         itemTotals: {}
       });
       
-      setShowResetModal(false);
-      setResetPin('');
       alert('✅ Statistiken wurden zurückgesetzt!');
     } catch (err) {
       console.error('Error resetting statistics:', err);
@@ -1012,12 +1005,12 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
             
             {/* Reset Button above close button */}
             <button
-              onClick={() => setShowResetModal(true)}
-              className="w-full mt-2 py-3 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold transition-colors"
+              onClick={handleResetStatistics}
+              disabled={resetting}
+              className="w-full mt-2 py-3 bg-red-600 text-white hover:bg-red-700 rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🗑️ Statistiken zurücksetzen
+              {resetting ? '⏳ Wird zurückgesetzt...' : '🗑️ Statistiken zurücksetzen'}
             </button>
-            <p className="text-xs text-gray-500 text-center mt-2">PIN geschützt</p>
             
             <button
               onClick={() => setShowStatistics(false)}
@@ -1057,7 +1050,7 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
         title="📊 Statistiken"
         width="lg"
       >
-        <StatisticsPanel statistics={statistics} onResetClick={() => setShowResetModal(true)} />
+        <StatisticsPanel statistics={statistics} onResetClick={handleResetStatistics} />
       </SlidePanel>
 
       {/* Tische verwalten: jetzt unter Einstellungen im Tab "Tische verwalten" */}
@@ -1102,48 +1095,6 @@ export default function BarDashboard({ thekeIndex = 0 }: BarDashboardProps) {
       >
         <BroadcastPanel />
       </SlidePanel>
-
-      {/* Reset Statistics Modal */}
-      {showResetModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-slate-700">
-            <h3 className="text-xl font-bold mb-2 text-center">🗑️ Statistiken zurücksetzen</h3>
-            <p className="text-slate-400 text-sm text-center mb-4">
-              Alle Statistiken werden unwiderruflich gelöscht!
-            </p>
-            <input
-              type="password"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={resetPin}
-              onChange={(e) => setResetPin(e.target.value)}
-              placeholder="PIN eingeben"
-              className="w-full p-3 text-xl text-center bg-slate-700 border border-slate-600 rounded-xl mb-4 font-mono"
-              maxLength={4}
-              autoFocus
-              onKeyDown={(e) => e.key === 'Enter' && handleResetStatistics()}
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowResetModal(false);
-                  setResetPin('');
-                }}
-                className="flex-1 px-4 py-3 bg-slate-700 text-white rounded-xl font-bold"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={handleResetStatistics}
-                disabled={resetting}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-bold"
-              >
-                {resetting ? '...' : '🗑️ Löschen'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* PIN Modal */}
       {showPinModal && (
