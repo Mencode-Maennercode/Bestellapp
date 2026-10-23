@@ -16,10 +16,12 @@ interface Props {
   disabled?: boolean;
   /** Anchor id, e.g. for a "Bestellen" button that scrolls here. */
   id?: string;
+  /** Height of a sticky header above the menu (waiter view); the category bar sticks below it. */
+  offset?: string;
 }
 
 /** One menu for guests and waiters: category tabs, photo grid, table row, glasses question. */
-export function Menu({ catalog, cart, s, disabled, id = 'karte' }: Props) {
+export function Menu({ catalog, cart, s, disabled, id = 'karte', offset }: Props) {
   const sections = useMemo(() => buildSections(catalog, { popular: s.popular, forTable: s.forTable }), [catalog, s]);
   const [active, setActive] = useState(sections[0]?.id);
   const tabs = useRef<HTMLDivElement>(null);
@@ -58,6 +60,7 @@ export function Menu({ catalog, cart, s, disabled, id = 'karte' }: Props) {
       <nav
         aria-label={s.menuNav}
         className="sticky top-0 z-20 -mx-[var(--gutter)] bg-bg/94 pt-[var(--safe-top)] backdrop-blur-md supports-[not(backdrop-filter:blur(1px))]:bg-bg"
+        style={offset ? { top: offset, paddingTop: 0 } : undefined}
       >
         <div ref={tabs} className="no-scrollbar flex gap-2 overflow-x-auto px-[var(--gutter)] py-3">
           {sections.map(sec => (
@@ -79,7 +82,13 @@ export function Menu({ catalog, cart, s, disabled, id = 'karte' }: Props) {
       </nav>
 
       {sections.map(sec => (
-        <section key={sec.id} id={`sec-${sec.id}`} aria-labelledby={`h-${sec.id}`} className="scroll-mt-[calc(var(--safe-top)+4.5rem)] pt-5 pb-4">
+        <section
+          key={sec.id}
+          id={`sec-${sec.id}`}
+          aria-labelledby={`h-${sec.id}`}
+          className="scroll-mt-[calc(var(--safe-top)+4.5rem)] pt-5 pb-4"
+          style={offset ? { scrollMarginTop: `calc(${offset} + 4.5rem)` } : undefined}
+        >
           <h2 id={`h-${sec.id}`} className="mb-3.5 font-display text-[2rem] leading-none font-extrabold uppercase">
             {sec.title}
           </h2>

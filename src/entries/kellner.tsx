@@ -1,4 +1,4 @@
+import { WaiterApp } from '@/features/waiter/WaiterApp';
 import { mount } from './mount';
-import { StaffScaffold } from './staff';
 
-mount(<StaffScaffold role="Kellner" />);
+mount(<WaiterApp />);

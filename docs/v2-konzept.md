@@ -223,3 +223,14 @@ Hinweis: Hintergrund-Agenten liefen vorhin ins Wochenlimit (Reset 9 Uhr). Falls 
 - Bilder: Schwarzpunkt korrigiert (`scripts/clean-drink-blacks.mjs`), sonst grauer Kasten ums Glas.
 - Lokale Vorschau: `npm run emu`, `npm run seed:dev` (Demo-Veranstaltung, Optionen `--paused --shutdown --broadcast --hochdeutsch`), `npm run dev:emu` → Links werden ausgegeben.
 - Offen: Rechtstexte prüfen lassen (nennen noch „TMG“ und „3 Tage Speicherdauer“, passt nicht mehr zum Event-Modell) — vor Livegang. Apfelschorle/Sprite zeigen eine dezente Tischkante im Foto.
+
+### Paket 4 — erledigt (23.10.2026, Branch `refactor/v2`)
+- **Kellner** `src/features/waiter/`: Link öffnen → Name → Tische (Raster inkl. 56a, zeigt Kollegen) → Alarm. Liste „Meine Aufträge“ (älteste oben, Wartezeit-Farbe), „Ohne Kellner“ (Tische, die kein anwesender Kellner hat – nichts bleibt ungesehen), „bei Kollegen“ eingeklappt. Übernehmen/Serviert per Knopf oder Wischen, 5 s Rückgängig; ⋮ = Abgeben, Nachbestellen, Stornieren. Vollbild-Alarm mit Ton/Vibration (Web Audio, kein MP3), Wake-Lock, Hinweis-Ton wenn die Theke fertig meldet. Tisch-Leiste öffnet dasselbe Menü wie beim Gast.
+- **Schnellbon**: „+ Bon“ → Menü → Merker + Schalter „an die Theke“ → Summe zum Kassieren, Wischen = erledigt. Modus „ohne Tische“ startet direkt mit Schnellbons.
+- **Theke** `src/features/bar/`: Kachel-Board (älteste zuerst, Kellner sichtbar), Sammelliste, Abholbereit (mit Zurück), Theken-Tabs bei mehreren Theken (jede Bestellung landet genau bei einer Theke), „Ausverkauft“ ohne PIN, Personal-Link als QR/Kopieren/Teilen. Handy: Tabs Bons/Liste/Abholen.
+- Logik rein in `shared/staff-board.ts` (+ 7 Tests, u. a. „fremder Schnellbon nie sichtbar“). Personal-Link verschwindet nach dem Login aus der Adresszeile; ohne `#` wird der zuletzt geöffnete Link genutzt (Push-Tipp).
+- Push: `public/push-sw.js` (ohne Firebase-SDK), Token-Registrierung in `src/features/staff/device.ts`. Braucht `VITE_FIREBASE_VAPID_KEY` (Paket 7); im Emulator aus. iPhone bekommt Push nur als installierte Web-App – dort zählt der Alarm bei offener Seite.
+- Vorschau: `npm run seed:dev` gibt jetzt auch Kellner-/Theke-Links aus, Demo-Bestellungen, Optionen `--two-bars --no-tables --empty`.
+- **Hinweis Privatsphäre:** Schnellbons sind in der Oberfläche nur beim eigenen Kellner sichtbar und lösen keinen Push aus. Auf Datenbank-Ebene können Kellner und Theke (gleicher Link, gleiche Rolle) alle Bestellungen der Veranstaltung lesen – wie bei Tischbestellungen auch. Für echte Trennung bräuchte die Theke einen eigenen Link; bei Bedarf in Paket 5/6 entscheiden.
+- Offen: Emulator-Lauf braucht Java im PATH (`C:Program FilesMicrosoftjdk-21…in`). Im Vite-Dev-Server kann ein Hot-Reload kurz „Kein Zugang“ zeigen (Firebase wird neu initialisiert) – „Erneut versuchen“ hilft, im Build tritt es nicht auf.
+

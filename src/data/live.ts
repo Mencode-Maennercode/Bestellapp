@@ -1,6 +1,22 @@
-import { onValue, ref } from 'firebase/database';
+import { equalTo, onValue, orderByChild, query, ref } from 'firebase/database';
 import { useEffect, useState } from 'react';
+import type { Order } from '@shared/types';
 import { db } from './firebase';
+
+/** Open orders of one event (served and cancelled ones stay out of the download). */
+export function useOpenOrders(eventId: string | null): Live<Record<string, Order>> {
+  const [state, setState] = useState<Live<Record<string, Order>>>({ status: 'loading' });
+  useEffect(() => {
+    if (!eventId) return;
+    setState({ status: 'loading' });
+    return onValue(
+      query(ref(db, `events/${eventId}/orders`), orderByChild('open'), equalTo(true)),
+      snap => setState({ status: 'ready', value: snap.val() as Record<string, Order> | null }),
+      error => setState({ status: 'error', error }),
+    );
+  }, [eventId]);
+  return state;
+}
 
 export type Live<T> =
   | { status: 'loading' }

@@ -35,7 +35,14 @@ Studio shots on pure black (`public/img/drinks`), rendered with `mix-blend-mode:
 
 Button (primary / secondary / quiet / danger, min 48–56 px), Stepper (− n +, 44–48 px targets, neutral or accent), Sheet (bottom sheet, drag/Esc/backdrop, focus trap, stackable), NumberGrid (0–8 one-tap), CountdownRing, Toast (with 5 s "Rückgängig"), Badge, ProductImage, Notice (full-screen state on bokeh), Skeleton.
 
-Shared menu (`src/features/menu`): category chips with scroll spy, photo cards (tap = +1, plus morphs into stepper), "Für den Tisch" tiles opening a sheet, glasses question, cart bar and cart sheet. Used by guests now and by waiters in package 4.
+Shared menu (`src/features/menu`): category chips with scroll spy, photo cards (tap = +1, plus morphs into stepper), "Für den Tisch" tiles opening a sheet, glasses question, cart bar and cart sheet. Used by guests and waiters.
+
+## Staff screens (`src/features/waiter`, `src/features/bar`, shared parts in `src/features/staff`)
+
+- **Ticket stub** carries table number and waiting time; its fill is the urgency light: `surface-3` < 3 min, `warn` 3–6 min, `late` breathing (`late-pulse`) > 6 min. Same rule for the bar tile header.
+- **Waiter**: setup in three steps on bokeh (name, table grid, alarm), list "Meine Aufträge" oldest first, "Ohne Kellner" for uncovered tables, colleagues' orders folded away. Swipe right or button for the next step; ⋮ sheet for hand-over, reorder, cancel. Bottom dock: my tables + "Bon".
+- **Alarm**: full screen in `accent-2` with the table number at 8–13 rem and an expanding ring; Web Audio pattern + vibration until taken or put aside.
+- **Bar**: tile board (oldest top left) with "Fertig", side column with pick list ("Sammelliste") and "Abholbereit"; below `lg` the three become tabs. Bar tabs when an event has several bars.
 
 ## Motion
 

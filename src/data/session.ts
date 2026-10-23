@@ -1,4 +1,5 @@
 import { signInWithCustomToken, signOut } from 'firebase/auth';
+import { TOKEN_PATTERN } from '@shared/codes';
 import { api } from './api';
 import { auth } from './firebase';
 
@@ -55,6 +56,17 @@ export async function adminLogin(pin: string): Promise<void> {
 }
 
 export const logout = () => signOut(auth);
+
+/**
+ * Staff link token from the URL, or the last link opened on this device
+ * (so a tap on a push notification without "#…" still works).
+ */
+export function staffLinkToken(): string | null {
+  const fromHash = hashParam();
+  if (TOKEN_PATTERN.test(fromHash)) return fromHash;
+  const stored = storedLink();
+  return stored && TOKEN_PATTERN.test(stored) ? stored : null;
+}
 
 /** Code or token after "#", e.g. /tisch/#K7M2P9QX4R. Never sent to the web server. */
 export function hashParam(): string {

@@ -1,4 +1,4 @@
+import { BarApp } from '@/features/bar/BarApp';
 import { mount } from './mount';
-import { StaffScaffold } from './staff';
 
-mount(<StaffScaffold role="Theke" />);
+mount(<BarApp />);
