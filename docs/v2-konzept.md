@@ -275,4 +275,5 @@ Hinweis: Hintergrund-Agenten liefen vorhin ins Wochenlimit (Reset 9 Uhr). Falls 
 ### Paket 7 — in Arbeit (23.10.2026)
 - Upload-Weg: Ordner `Buchungssystem/` (+ Kopie in `public/Buchungssystem/`) im Repo `Mencode-Maennercode/praesenswert` (`C:\…\CascadeProjects\prasenswert`), Push auf `main`, Netcup zieht automatisch. Eigene `.htaccess` (CSP für Firebase, noindex) liegt in `public/.htaccess`.
 - DB-Sicherung: `backups/legacy-2026-10-23.json` (nicht in git) + Kopie in `../sicherungen/karneval-db/`. Trockenlauf der Migration ok.
-- Blockiert: `gsc-agent@…` darf im Projekt `karneval-acfff` keine APIs aktivieren → Regeln/Functions-Deploy scheitert (403).
+- Live seit 23.10.2026: Regeln + 14 Functions deployt (alte `sendOrderNotification`/`cleanupInvalidTokens` entfernt), Migration angewendet (Karneval 2026, 727,50 €), Admin-PIN gesetzt, Frontend unter `praesenzwert.de/Buchungssystem/` (Admin-Login live getestet, keine Konsolenfehler).
+- Offen: erste echte Veranstaltung im Admin anlegen; App Check; Rechtstexte (TMG/Speicherdauer); Test mit echten Handys; Lighthouse gegen Live-URL.
