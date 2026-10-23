@@ -1,0 +1,148 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "guestCodes": {
+      "$code": { ".read": true }
+    },
+
+    "events": {
+      ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+      "$e": {
+        "public": {
+          ".read": true,
+          ".write": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+          ".validate": "newData.hasChildren(['name', 'status', 'mode', 'startsAt', 'endsAt', 'language', 'archiveMinutes', 'accent'])",
+          "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
+          "status": { ".validate": "newData.val() == 'draft' || newData.val() == 'live' || newData.val() == 'closed'" },
+          "mode": { ".validate": "newData.val() == 'tables' || newData.val() == 'noTables'" },
+          "startsAt": { ".validate": "newData.isNumber()" },
+          "endsAt": { ".validate": "newData.isNumber() && newData.val() > newData.parent().child('startsAt').val()" },
+          "language": { ".validate": "newData.val() == 'koelsch' || newData.val() == 'hochdeutsch'" },
+          "archiveMinutes": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 240" },
+          "accent": {
+            "primary": { ".validate": "newData.isString() && newData.val().matches(/^#[0-9A-Fa-f]{6}$/)" },
+            "secondary": { ".validate": "newData.isString() && newData.val().matches(/^#[0-9A-Fa-f]{6}$/)" },
+            "$other": { ".validate": false }
+          },
+          "$other": { ".validate": false }
+        },
+
+        "catalog": {
+          ".read": true,
+          ".write": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+          "categories": {
+            "$c": {
+              ".validate": "newData.hasChildren(['name', 'sort', 'active'])",
+              "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30" },
+              "sort": { ".validate": "newData.isNumber()" },
+              "active": { ".validate": "newData.isBoolean()" },
+              "$other": { ".validate": false }
+            }
+          },
+          "products": {
+            "$p": {
+              ".validate": "newData.hasChildren(['name', 'categoryId', 'priceCents', 'soldOut', 'popular', 'sort', 'active'])",
+              "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
+              "categoryId": { ".validate": "newData.isString() && newData.parent().parent().parent().child('categories').child(newData.val()).exists()" },
+              "priceCents": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000 && newData.val() % 1 == 0" },
+              "size": { ".validate": "newData.isString() && newData.val().length <= 20" },
+              "description": { ".validate": "newData.isString() && newData.val().length <= 80" },
+              "image": { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{1,40}$/)" },
+              "badge": { ".validate": "newData.isString() && newData.val().length <= 10" },
+              "soldOut": {
+                ".write": "auth != null && auth.token.until > now && auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val() && data.exists()",
+                ".validate": "newData.isBoolean()"
+              },
+              "popular": { ".validate": "newData.isBoolean()" },
+              "glassPrompt": { ".validate": "newData.val() == 'beer' || newData.val() == 'wine' || newData.val() == 'sekt'" },
+              "glassFor": { ".validate": "newData.val() == 'beer' || newData.val() == 'wine' || newData.val() == 'sekt'" },
+              "tableSection": { ".validate": "newData.val() == 'bottle-nonalc' || newData.val() == 'beer-crate' || newData.val() == 'wine-bottle' || newData.val() == 'shots-crate'" },
+              "sort": { ".validate": "newData.isNumber()" },
+              "active": { ".validate": "newData.isBoolean()" },
+              "$other": { ".validate": false }
+            }
+          },
+          "$other": { ".validate": false }
+        },
+
+        "system": {
+          ".read": true,
+          ".write": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+          "shutdown": { ".validate": "newData.isBoolean()" },
+          "ordersPaused": { ".validate": "newData.isBoolean()" },
+          "broadcast": {
+            ".validate": "newData.hasChildren(['message', 'target', 'createdAt'])",
+            "message": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 280" },
+            "target": { ".validate": "newData.val() == 'all' || newData.val() == 'guests' || newData.val() == 'staff'" },
+            "createdAt": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          },
+          "$other": { ".validate": false }
+        },
+
+        "tables": {
+          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          "$t": {
+            "label": { ".read": true }
+          }
+        },
+
+        "bars": {
+          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          ".write": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+          "$b": {
+            ".validate": "newData.hasChildren(['name'])",
+            "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30" },
+            "tableIds": { "$i": { ".validate": "newData.isString() && newData.val().length <= 40" } },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "orders": {
+          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          ".indexOn": ["open"]
+        },
+
+        "tableStatus": {
+          "$code": { ".read": true }
+        },
+
+        "stats": {
+          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now"
+        },
+
+        "waiters": {
+          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          "$uid": {
+            ".write": "auth != null && auth.uid == $uid && auth.token.until > now && auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()",
+            ".validate": "newData.hasChildren(['name', 'lastSeen'])",
+            "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
+            "tableIds": { "$i": { ".validate": "newData.isString() && newData.val().length <= 40" } },
+            "fcmToken": { ".validate": "newData.isString() && newData.val().length <= 400" },
+            "lastSeen": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "plans": {
+          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          ".write": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+          "$plan": {
+            ".validate": "newData.hasChildren(['name', 'image'])",
+            "name": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "image": { ".validate": "newData.isString() && newData.val().length <= 1500000" },
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
+    "secrets": {
+      "eventStaffToken": {
+        "$e": { ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now" }
+      }
+    }
+  }
+}

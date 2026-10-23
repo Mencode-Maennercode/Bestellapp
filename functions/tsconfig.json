@@ -1,17 +1,14 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "outDir": "lib",
-    "sourceMap": true,
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "strict": true,
-    "target": "es2017",
+    "noEmit": true,
     "skipLibCheck": true,
-    "esModuleInterop": true
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "../node_modules/@types"]
   },
-  "compileOnSave": true,
-  "include": [
-    "src"
-  ]
+  "include": ["src", "../shared"],
+  "exclude": ["../shared/**/*.test.ts"]
 }

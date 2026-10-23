@@ -1,18 +1,16 @@
 {
+  "database": { "rules": "database.rules.json" },
   "functions": {
     "source": "functions",
-    "runtime": "nodejs20",
-    "region": "europe-west1"
+    "runtime": "nodejs22",
+    "ignore": ["node_modules", "src", "build.mjs", "tsconfig.json", "*.log"],
+    "predeploy": ["node functions/build.mjs"]
   },
-  "hosting": {
-    "public": "out",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ]
-  },
-  "database": {
-    "rules": "firebase-rules.json"
+  "emulators": {
+    "auth": { "port": 9099 },
+    "database": { "port": 9000 },
+    "functions": { "port": 5001 },
+    "ui": { "enabled": false },
+    "singleProjectMode": true
   }
 }

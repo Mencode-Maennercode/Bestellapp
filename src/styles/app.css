@@ -1,0 +1,22 @@
+@import "tailwindcss";
+@source not "../../legacy";
+@source not "../../functions";
+
+/* Design tokens are finalised in package 3 (design system). */
+:root {
+  color-scheme: dark;
+  --bg: #0a0d0b;
+  --surface-1: #121714;
+  --text: #f1f5f2;
+  --muted: #9aa69f;
+  --accent: #009640;
+  --accent-2: #ffcc00;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
