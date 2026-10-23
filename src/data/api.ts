@@ -72,6 +72,7 @@ export const api = {
     sendToBar?: boolean;
     lines: CartLine[];
     requestId: string;
+    name?: string;
   }) => call<{ orderId: string }>('createWaiterOrder', input),
   orderAction: (eventId: string, orderId: string, action: OrderAction) =>
     call<{ status: string }>('orderAction', { eventId, orderId, action }),

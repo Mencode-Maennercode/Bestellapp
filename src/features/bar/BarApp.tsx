@@ -8,14 +8,13 @@ import { useNow } from '@/data/live';
 import { useWakeLock } from '@/features/staff/device';
 import { Age, Quiet, Sash, SystemStrip } from '@/features/staff/parts';
 import { sound, useSoundReady } from '@/features/staff/sound';
-import { useEventData, useOrderActions, useStaffSession, type EventData } from '@/features/staff/useStaff';
+import { useOrderActions, useStaffLive, type EventData } from '@/features/staff/useStaff';
 import { Badge, Button, Notice, ProductImage, Skeleton, applyAccent, cx } from '@/ui';
 import { LinkSheet, SoldOutSheet } from './BarSheets';
 import { BarTile } from './BarTile';
 
 export function BarApp() {
-  const session = useStaffSession('bar');
-  const data = useEventData(session.status === 'ready' ? session.eventId : null, 'bar', session.status === 'ready' ? session.uid : null);
+  const { session, data } = useStaffLive('bar');
   const pub = data.status === 'ready' ? data.data.pub : null;
   useEffect(() => applyAccent(pub?.accent), [pub?.accent]);
 

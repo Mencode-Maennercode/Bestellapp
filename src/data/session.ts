@@ -34,7 +34,8 @@ function storedLink(role: StaffRole): string | null {
  * Silent staff login from the link token in the URL. Reuses the device session while it belongs
  * to the same link and has not expired; otherwise exchanges the token for a fresh session.
  */
-export async function ensureStaffSession(token: string, role: StaffRole): Promise<{ eventId: string; uid: string; role: StaffRole }> {
+export async function ensureStaffSession(token: string, role: StaffRole, refresh = false): Promise<{ eventId: string; uid: string; role: StaffRole }> {
+  if (refresh) await auth.authStateReady().then(() => auth.currentUser?.getIdToken(true)).catch(() => undefined);
   const c = await currentClaims();
   if (c?.role === role && c.eventId && (c.until ?? 0) > Date.now() && storedLink(role) === token) {
     return { eventId: c.eventId, uid: auth.currentUser!.uid, role };

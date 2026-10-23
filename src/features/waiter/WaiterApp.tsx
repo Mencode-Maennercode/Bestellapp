@@ -9,7 +9,7 @@ import { useNow } from '@/data/live';
 import { enablePush, pushState, useWakeLock, type PushState } from '@/features/staff/device';
 import { Quiet, Sash, SystemStrip } from '@/features/staff/parts';
 import { sound, useSoundReady } from '@/features/staff/sound';
-import { sortedTables, useEventData, useOrderActions, useStaffSession, type EventData } from '@/features/staff/useStaff';
+import { sortedTables, useOrderActions, useStaffLive, type EventData } from '@/features/staff/useStaff';
 import { Button, Notice, Sheet, Skeleton, applyAccent, cx, useHideShellPhoto, useToast } from '@/ui';
 import { AlarmOverlay } from './AlarmOverlay';
 import { OrderCard, type Primary } from './OrderCard';
@@ -35,8 +35,7 @@ function loadProfile(eventId: string): Profile {
 }
 
 export function WaiterApp() {
-  const session = useStaffSession('waiter');
-  const data = useEventData(session.status === 'ready' ? session.eventId : null, 'waiter', session.status === 'ready' ? session.uid : null);
+  const { session, data } = useStaffLive('waiter');
   const pub = data.status === 'ready' ? data.data.pub : null;
   useEffect(() => applyAccent(pub?.accent), [pub?.accent]);
 
@@ -207,7 +206,7 @@ function Board({ eventId, uid, data, profile, setProfile, takenBy }: BoardProps)
     if (await run(id, 'claim', `Tisch ${data.orders[id]?.tableLabel} übernommen`)) setAlerts(a => a.filter(x => x !== id));
   };
 
-  if (target) return <WaiterOrder eventId={eventId} catalog={data.catalog} target={target} onClose={() => setTarget(null)} />;
+  if (target) return <WaiterOrder eventId={eventId} waiterName={profile.name} catalog={data.catalog} target={target} onClose={() => setTarget(null)} />;
 
   const tableLabel = (id: string) => data.tables[id]?.label ?? '?';
   const moreOrder = more ? data.orders[more] : null;

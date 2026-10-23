@@ -31,6 +31,7 @@ export const waiterOrderInput = z.object({
   sendToBar: z.boolean().default(true),
   lines: cartLines,
   requestId,
+  name: z.string().trim().min(1).max(40).optional(),
 });
 
 export const orderActionInput = z.object({

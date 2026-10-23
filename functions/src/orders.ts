@@ -108,7 +108,13 @@ export const createWaiterOrder = onCall({ region: REGION }, async req => {
   const { pub, catalog } = await loadEvent(input.eventId);
   assertOpen(pub, now);
 
-  const name = await read<string>(`${paths.waiters(input.eventId)}/${uid}/name`);
+  // The phone's profile write can miss (fresh login, offline): fall back to the name sent along.
+  const nameRef = `${paths.waiters(input.eventId)}/${uid}`;
+  let name = await read<string>(`${nameRef}/name`);
+  if (!name && input.name) {
+    name = input.name;
+    await db.ref(nameRef).update({ name, lastSeen: now });
+  }
   if (!name) fail('failed-precondition', 'nameMissing');
 
   let table: Table | null = null;

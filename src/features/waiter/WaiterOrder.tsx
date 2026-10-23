@@ -16,6 +16,7 @@ export type OrderTarget = { kind: 'table'; tableId: string; label: string } | { 
 
 interface Props {
   eventId: string;
+  waiterName: string;
   catalog: Catalog;
   target: OrderTarget;
   onClose: () => void;
@@ -51,7 +52,7 @@ function useRank(eventId: string): Rank | undefined {
 }
 
 /** The same menu guests use, for a table or a Schnellbon without table. */
-export function WaiterOrder({ eventId, catalog, target, onClose }: Props) {
+export function WaiterOrder({ eventId, waiterName, catalog, target, onClose }: Props) {
   const toast = useToast();
   const isTab = target.kind === 'tab';
   const rank = useRank(eventId);
@@ -90,6 +91,7 @@ export function WaiterOrder({ eventId, catalog, target, onClose }: Props) {
         ...(isTab ? { note: note.trim() || undefined, sendToBar: toBar } : { tableId: target.tableId }),
         lines: toLines(cart.cart),
         requestId: requestId.current,
+        name: waiterName,
       });
       cart.clear();
       toast({

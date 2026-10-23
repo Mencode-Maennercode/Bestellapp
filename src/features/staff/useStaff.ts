@@ -19,15 +19,16 @@ const DEAD_LINK = new Set(['linkInvalid', 'linkRotated', 'eventEnded']);
  * Silent login from the link; afterwards the token leaves the address bar (screenshots, shoulder views).
  * A link of the other role (bar link on the waiter page and vice versa) is forwarded to its own page.
  */
-export function useStaffSession(role: StaffRole): StaffSession {
+export function useStaffSession(role: StaffRole, attempt = 0): StaffSession {
   const [s, setS] = useState<StaffSession>({ status: 'loading' });
   useEffect(() => {
+    setS({ status: 'loading' });
     const token = staffLinkToken(role);
     if (!token) {
       setS({ status: 'error', message: 'Bitte den Personal-Link vom Veranstalter öffnen.' });
       return;
     }
-    ensureStaffSession(token, role)
+    ensureStaffSession(token, role, attempt > 0)
       .then(r => {
         if (r.role !== role) {
           location.replace(`${import.meta.env.BASE_URL}${PAGE[r.role]}/#${token}`);
@@ -44,8 +45,32 @@ export function useStaffSession(role: StaffRole): StaffSession {
         if (e instanceof ApiError && DEAD_LINK.has(e.reason)) forgetStaffLink(role);
         setS({ status: 'error', message: e instanceof ApiError ? e.message : 'Verbindung fehlgeschlagen. Bitte erneut versuchen.' });
       });
-  }, [role]);
+  }, [role, attempt]);
   return s;
+}
+
+const MAX_RECOVERIES = 3;
+
+/**
+ * Session plus live data. A listener error usually means the device's login went stale
+ * (phone slept past the token lifetime, another tab signed in with a different link):
+ * re-login silently from the stored link and resubscribe before giving up.
+ */
+export function useStaffLive(role: StaffRole) {
+  const [attempt, setAttempt] = useState(0);
+  const [fails, setFails] = useState(0);
+  const session = useStaffSession(role, attempt);
+  const ready = session.status === 'ready';
+  const data = useEventData(ready ? session.eventId : null, role, ready ? session.uid : null);
+  useEffect(() => {
+    if (data.status === 'ready') setFails(0);
+    if (data.status === 'error' && fails < MAX_RECOVERIES) {
+      setFails(f => f + 1);
+      setAttempt(a => a + 1);
+    }
+  }, [data.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  const gaveUp = data.status === 'error' && fails >= MAX_RECOVERIES;
+  return { session, data: data.status === 'error' && !gaveUp ? ({ status: 'loading' } as const) : data };
 }
 
 export interface EventData {
