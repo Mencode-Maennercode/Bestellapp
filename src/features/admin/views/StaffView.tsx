@@ -55,7 +55,8 @@ function LinkCard({ role }: { role: StaffRole }) {
   const t = ROLE_TEXT[role];
 
   useEffect(() => {
-    if (url) void qrSvg(url).then(setSvg, () => setSvg(''));
+    // A failed load (e.g. tab open across a new upload) shows a hint instead of an empty white box.
+    if (url) void qrSvg(url).then(setSvg, () => setSvg('<p style="font:600 13px/1.3 sans-serif;color:#555;text-align:center;padding-top:30%">QR-Code nicht geladen.<br>Seite neu laden.</p>'));
     else setSvg('');
   }, [url]);
 
