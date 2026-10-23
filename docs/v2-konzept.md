@@ -271,3 +271,8 @@ Hinweis: Hintergrund-Agenten liefen vorhin ins Wochenlimit (Reset 9 Uhr). Falls 
 
   Ziel Perf ≥ 90 erreicht für Gast, Start, Rechtliches; Kellner/Verwaltung knapp darunter (Schwankung ±3 je Lauf), Theke 81: ihr größtes Element ist Bon-Text aus Live-Daten nach Anmeldung – braucht Login + Datenbank, statisch nicht vorziehbar. Theke läuft auf einem Gerät, das einmal am Abend lädt. Vor Livegang gegen die echte Adresse messen (Komprimierung/Caching des Hosters zählen mit).
 - Offen für Paket 7: Werte auf praesenzwert.de messen; Rechtstexte prüfen (TMG/Speicherdauer); App Check; echte Handys.
+
+### Paket 7 — in Arbeit (23.10.2026)
+- Upload-Weg: Ordner `Buchungssystem/` (+ Kopie in `public/Buchungssystem/`) im Repo `Mencode-Maennercode/praesenswert` (`C:\…\CascadeProjects\prasenswert`), Push auf `main`, Netcup zieht automatisch. Eigene `.htaccess` (CSP für Firebase, noindex) liegt in `public/.htaccess`.
+- DB-Sicherung: `backups/legacy-2026-10-23.json` (nicht in git) + Kopie in `../sicherungen/karneval-db/`. Trockenlauf der Migration ok.
+- Blockiert: `gsc-agent@…` darf im Projekt `karneval-acfff` keine APIs aktivieren → Regeln/Functions-Deploy scheitert (403).
