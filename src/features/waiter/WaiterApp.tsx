@@ -35,8 +35,8 @@ function loadProfile(eventId: string): Profile {
 }
 
 export function WaiterApp() {
-  const session = useStaffSession();
-  const data = useEventData(session.status === 'ready' ? session.eventId : null);
+  const session = useStaffSession('waiter');
+  const data = useEventData(session.status === 'ready' ? session.eventId : null, 'waiter', session.status === 'ready' ? session.uid : null);
   const pub = data.status === 'ready' ? data.data.pub : null;
   useEffect(() => applyAccent(pub?.accent), [pub?.accent]);
 

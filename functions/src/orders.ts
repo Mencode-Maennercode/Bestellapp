@@ -103,7 +103,7 @@ export const createGuestOrder = onCall({ region: REGION }, async req => {
 /** Waiter order for a table, or a private tab without table. */
 export const createWaiterOrder = onCall({ region: REGION }, async req => {
   const input = parse(waiterOrderInput, req.data);
-  const { uid } = await requireStaff(req, input.eventId);
+  const { uid } = await requireStaff(req, input.eventId, ['waiter']);
   const now = Date.now();
   const { pub, catalog } = await loadEvent(input.eventId);
   assertOpen(pub, now);
@@ -147,7 +147,7 @@ export const createWaiterOrder = onCall({ region: REGION }, async req => {
 export const orderAction = onCall({ region: REGION }, async req => {
   const { eventId, orderId, action } = parse(orderActionInput, req.data);
   const { uid, role } = await requireStaff(req, eventId);
-  const name = (await read<string>(`${paths.waiters(eventId)}/${uid}/name`)) ?? (role === 'admin' ? 'Admin' : 'Theke');
+  const name = (await read<string>(`${paths.waiters(eventId)}/${uid}/name`)) ?? (role === 'admin' ? 'Admin' : role === 'bar' ? 'Theke' : 'Kellner');
   const actor: Actor = { uid, name, role };
   const now = Date.now();
 

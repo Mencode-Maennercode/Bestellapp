@@ -47,3 +47,7 @@ Shared menu (`src/features/menu`): category chips with scroll spy, photo cards (
 ## Motion
 
 Springs from `motion/react` for state changes only: stepper pop, sheet, cart bar, toast, order progress. `MotionConfig reducedMotion="user"` plus a CSS reduced-motion override.
+
+## Admin console (`src/features/admin`)
+
+Same tokens and components, laid out for a laptop or tablet: sticky header (event picker, Bestellsperre, Notfall-Stopp, logout), scrolling tab strip, content up to 72 rem. PIN pad on bokeh for login. Cards (`surface-1`) with display-type headings; numbers in `num`; destructive actions always through a confirmation sheet that says what stops working. Lists are rows with inline controls (price field, pill toggles for Beliebt / Ausverkauft / An); drag handle or arrow keys reorder. QR sheets print from their own plain white window so the dark theme never reaches paper.

@@ -6,6 +6,7 @@ import { EVENT_GRACE_MS, eventGate } from '@shared/event-window';
 import type { Catalog, EventPublic, SystemState, TableStatusEntry } from '@shared/types';
 import { ApiError, api, newRequestId } from '@/data/api';
 import { useLive, useNow } from '@/data/live';
+import { isOtherEvent } from '@/data/lock';
 import { hashParam } from '@/data/session';
 import { CartBar, CartSheet } from '@/features/menu/Cart';
 import { toLines, useCart } from '@/features/menu/useCart';
@@ -71,7 +72,8 @@ export function GuestApp() {
         {t.offlineText}
       </Notice>
     );
-  if (link.status === 'ready' && !link.value) return <Notice icon={<LinkBreak size={44} />} title={t.invalidTitle}>{t.invalidText}</Notice>;
+  if ((link.status === 'ready' && !link.value) || (ids && isOtherEvent(ids.eventId)))
+    return <Notice icon={<LinkBreak size={44} />} title={t.invalidTitle}>{t.invalidText}</Notice>;
   if (!p || catalog.status !== 'ready' || system.status !== 'ready' || label.status !== 'ready' || status.status !== 'ready') return <Loading />;
 
   const gate = eventGate(p, now);

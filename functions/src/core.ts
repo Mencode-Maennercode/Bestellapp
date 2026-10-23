@@ -5,7 +5,7 @@ import { HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { createHash, randomBytes } from 'node:crypto';
 import type { z } from 'zod';
 import { randomCode } from '../../shared/codes';
-import type { Catalog, EventPublic } from '../../shared/types';
+import type { Catalog, EventPublic, Role, StaffRole } from '../../shared/types';
 
 initializeApp();
 
@@ -21,7 +21,9 @@ export const paths = {
   guestCode: (code: string) => `guestCodes/${code}`,
   event: (e: string) => `events/${e}`,
   pub: (e: string) => `events/${e}/public`,
-  staffGen: (e: string) => `events/${e}/staffGen`,
+  /** Link generation per staff role; rotating a link bumps it and locks out old devices. */
+  gen: (e: string, role: StaffRole) => `events/${e}/gen/${role}`,
+  eventIndex: (e: string) => `eventIndex/${e}`,
   catalog: (e: string) => `events/${e}/catalog`,
   tables: (e: string) => `events/${e}/tables`,
   system: (e: string) => `events/${e}/system`,
@@ -31,6 +33,7 @@ export const paths = {
   waiters: (e: string) => `events/${e}/waiters`,
   limits: (e: string, key: string) => `events/${e}/limits/${key}`,
   staffToken: (hash: string) => `secrets/staffTokens/${hash}`,
+  /** Plain tokens of the current links: { waiter, bar }. Admin only. */
   eventStaffToken: (e: string) => `secrets/eventStaffToken/${e}`,
   adminPin: 'secrets/adminPin',
   adminFails: (ipHash: string) => `secrets/adminFails/${ipHash}`,
@@ -52,9 +55,9 @@ export function fail(code: 'failed-precondition' | 'permission-denied' | 'not-fo
 }
 
 export interface Claims {
-  role: 'staff' | 'admin';
+  role: Role;
   eventId?: string;
-  /** Staff link generation; rotating the link bumps it and locks out old devices at once. */
+  /** Link generation of this role; rotating the link bumps it and locks out old devices at once. */
   gen?: number;
   until: number;
 }
@@ -71,13 +74,18 @@ export function requireAdmin(req: CallableRequest): { uid: string } {
   return { uid: req.auth!.uid };
 }
 
-/** Staff of this event (current link generation), or an admin. */
-export async function requireStaff(req: CallableRequest, eventId: string): Promise<{ uid: string; role: 'staff' | 'admin' }> {
+/** Staff of this event with a current link (one of `allowed` roles), or an admin. */
+export async function requireStaff(
+  req: CallableRequest,
+  eventId: string,
+  allowed: StaffRole[] = ['waiter', 'bar'],
+): Promise<{ uid: string; role: Role }> {
   const c = claimsOf(req);
   if (!c) fail('unauthenticated', 'sessionExpired');
-  if (c.role === 'staff') {
+  if (c.role !== 'admin') {
+    if (!allowed.includes(c.role)) fail('permission-denied', 'notAllowed');
     if (c.eventId !== eventId) fail('permission-denied', 'otherEvent');
-    if (c.gen !== (await read<number>(paths.staffGen(eventId)))) fail('unauthenticated', 'linkRotated');
+    if (c.gen !== (await read<number>(paths.gen(eventId, c.role)))) fail('unauthenticated', 'linkRotated');
   }
   return { uid: req.auth!.uid, role: c.role };
 }

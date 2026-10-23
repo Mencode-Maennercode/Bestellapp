@@ -10,8 +10,9 @@ import { defaultCatalog, glassProductId } from './catalog-seed';
 import type { Order } from './types';
 
 const catalog = defaultCatalog();
-const anna: Actor = { uid: 'u-anna', name: 'Anna', role: 'staff' };
-const ben: Actor = { uid: 'u-ben', name: 'Ben', role: 'staff' };
+const anna: Actor = { uid: 'u-anna', name: 'Anna', role: 'waiter' };
+const ben: Actor = { uid: 'u-ben', name: 'Ben', role: 'waiter' };
+const theke: Actor = { uid: 'u-theke', name: 'Theke', role: 'bar' };
 const admin: Actor = { uid: 'u-admin', name: 'Admin', role: 'admin' };
 
 function newOrder(partial: Partial<Order> = {}): Order {
@@ -120,6 +121,36 @@ describe('order lifecycle', () => {
     expect(() => applyAction(served, 'cancel', anna, 2)).toThrow(TransitionError);
     const c = applyAction(served, 'cancel', admin, 2);
     expect([c.status, c.counted, c.open]).toEqual(['cancelled', false, false]);
+  });
+});
+
+describe('who may read and act on an order', () => {
+  const tab = (sendToBar: boolean) =>
+    withDerived({ ...newOrder(), type: 'tab' as const, tableId: undefined, waiterUid: 'u-anna', waiterName: 'Anna', sendToBar });
+
+  it('puts table orders in the shared feeds and closes both feeds when done', () => {
+    const o = newOrder();
+    expect([o.wFeed, o.bFeed]).toEqual(['all', 'bar']);
+    const done = applyAction(o, 'serve', anna, 1);
+    expect([done.wFeed, done.bFeed]).toEqual([null, null]);
+    const call = withDerived({ ...newOrder(), type: 'call' as const, sendToBar: false, items: [], totalCents: 0 });
+    expect([call.wFeed, call.bFeed]).toEqual(['all', null]);
+  });
+  it('keeps tabs private: only the owner feed, and the bar feed only when sent to the bar', () => {
+    expect([tab(false).wFeed, tab(false).bFeed]).toEqual(['w:u-anna', null]);
+    expect([tab(true).wFeed, tab(true).bFeed]).toEqual(['w:u-anna', 'bar']);
+  });
+  it('another waiter cannot touch a tab, not even cancel it', () => {
+    for (const action of ['claim', 'serve', 'cancel'] as const) expect(() => applyAction(tab(true), action, ben, 1)).toThrow(TransitionError);
+    expect(applyAction(tab(true), 'cancel', anna, 1).status).toBe('cancelled');
+  });
+  it('the bar may only mark bar orders ready (and take that back)', () => {
+    const ready = applyAction(newOrder(), 'ready', theke, 1);
+    expect(ready.status).toBe('ready');
+    expect(applyAction(ready, 'unready', theke, 2).status).toBe('new');
+    for (const action of ['claim', 'serve', 'cancel'] as const) expect(() => applyAction(newOrder(), action, theke, 1)).toThrow(TransitionError);
+    expect(() => applyAction(tab(false), 'ready', theke, 1)).toThrow(TransitionError);
+    expect(applyAction(tab(true), 'ready', theke, 1).status).toBe('ready');
   });
 });
 

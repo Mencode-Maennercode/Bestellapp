@@ -6,7 +6,7 @@ export type OrderAction = 'claim' | 'unclaim' | 'ready' | 'unready' | 'serve' | 
 export interface Actor {
   uid: string;
   name: string;
-  role: 'staff' | 'admin';
+  role: 'waiter' | 'bar' | 'admin';
 }
 
 export class TransitionError extends Error {
@@ -35,7 +35,11 @@ export function withDerived<T extends Order>(o: T): T {
   const counted = isCounted(o);
   // Credit a waiter when counting starts and keep that credit stable while counted.
   const countedWaiter = counted ? (o.counted && o.countedWaiter ? o.countedWaiter : countedWaiterOf(o)) : null;
-  return { ...o, status: deriveStatus(o), counted, countedWaiter, open: !o.cancelledAt && !o.servedAt };
+  const open = !o.cancelledAt && !o.servedAt;
+  // Feed keys decide who may read the order (see database.rules.json); tabs are private to their waiter.
+  const wFeed = open ? (o.type === 'tab' ? `w:${o.waiterUid}` : 'all') : null;
+  const bFeed = open && o.sendToBar && o.type !== 'call' ? 'bar' : null;
+  return { ...o, status: deriveStatus(o), counted, countedWaiter, open, wFeed, bFeed };
 }
 
 /** Pure state transition. Throws TransitionError when the action is not allowed. */
@@ -45,6 +49,10 @@ export function applyAction<T extends Order>(order: T, action: OrderAction, acto
   const claimedByOther = !!o.claimedBy && o.claimedBy.uid !== actor.uid;
 
   if (o.cancelledAt && action !== 'cancel') throw new TransitionError('finished');
+
+  // Next to the database rules: a tab belongs to its waiter; the bar only marks bar orders ready.
+  if (o.type === 'tab' && actor.role === 'waiter' && o.waiterUid !== actor.uid) throw new TransitionError('notAllowed');
+  if (actor.role === 'bar' && (!o.sendToBar || (action !== 'ready' && action !== 'unready'))) throw new TransitionError('notAllowed');
 
   switch (action) {
     case 'claim':

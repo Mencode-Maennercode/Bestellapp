@@ -14,7 +14,9 @@
     "test:emu": "npm run functions:build && firebase emulators:exec --project demo-karneval --only auth,database,functions \"vitest run --config vitest.emu.config.ts\"",
     "emu": "npm run functions:build && firebase emulators:start --project demo-karneval --only auth,database,functions",
     "seed:dev": "node scripts/seed-dev.ts",
-    "dev:emu": "vite --mode emu"
+    "dev:emu": "vite --mode emu",
+    "build:event": "node scripts/build-event.mjs",
+    "migrate": "node scripts/migrate-v2.ts"
   },
   "dependencies": {
     "@fontsource-variable/atkinson-hyperlegible-next": "5.3.0",

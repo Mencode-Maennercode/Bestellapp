@@ -14,8 +14,8 @@ import { LinkSheet, SoldOutSheet } from './BarSheets';
 import { BarTile } from './BarTile';
 
 export function BarApp() {
-  const session = useStaffSession();
-  const data = useEventData(session.status === 'ready' ? session.eventId : null);
+  const session = useStaffSession('bar');
+  const data = useEventData(session.status === 'ready' ? session.eventId : null, 'bar', session.status === 'ready' ? session.uid : null);
   const pub = data.status === 'ready' ? data.data.pub : null;
   useEffect(() => applyAccent(pub?.accent), [pub?.accent]);
 
@@ -248,7 +248,7 @@ function Bar({ eventId, token, data }: { eventId: string; token: string; data: E
       </div>
 
       <SoldOutSheet open={soldOut} onClose={() => setSoldOut(false)} eventId={eventId} catalog={data.catalog} />
-      <LinkSheet open={link} onClose={() => setLink(false)} token={token} eventName={data.pub.name} />
+      <LinkSheet open={link} onClose={() => setLink(false)} eventId={eventId} token={token} eventName={data.pub.name} slug={data.pub.slug} />
     </div>
   );
 }

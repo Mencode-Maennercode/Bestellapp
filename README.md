@@ -20,8 +20,8 @@ live mit, jede Veranstaltung ist strikt getrennt. Konzept und Fortschritt: [docs
 Gebaut für `www.praesenzwert.de/Buchungssystem/` – reine statische Dateien, kein Node.js auf dem Webserver.
 
 - Gast: `/Buchungssystem/tisch/#<Tisch-Code>`
-- Kellner: `/Buchungssystem/kellner/#<Personal-Link>`
-- Theke: `/Buchungssystem/theke/#<Personal-Link>`
+- Kellner: `/Buchungssystem/kellner/#<Kellner-Link>`
+- Theke: `/Buchungssystem/theke/#<Theken-Link>` (eigener Link, sieht keine privaten Schnellbons)
 - Verwaltung: `/Buchungssystem/admin/` (Admin-PIN)
 
 Codes stehen hinter `#` und werden nie an den Webserver übertragen.
@@ -31,7 +31,9 @@ Codes stehen hinter `#` und werden nie an den Webserver übertragen.
 - Im Browser liegen keine Geheimnisse. Admin-PIN wird nur als scrypt-Hash gespeichert und serverseitig geprüft.
 - Gäste können nichts direkt in die Datenbank schreiben; Bestellungen laufen über Functions, Preise kommen nur aus dem Katalog.
 - Tisch-Codes und Personal-Links gelten nur für ihre Veranstaltung und nur im Zeitfenster (±1 h).
-- Personal-Link erneuern sperrt alte Geräte sofort aus.
+- Kellner- und Theken-Link sind getrennt; jeden kann man einzeln erneuern und damit alte Geräte sofort aussperren.
+- „Beenden“ löscht beide Links, sperrt die Sitzungen und macht die Veranstaltung endgültig; eine Folge-Veranstaltung bekommt neue Codes und Links.
+- Optional eigener Ordner je Veranstaltung (`npm run build:event -- <Ordner> <eventId>`): Ordner löschen = Adressen tot.
 
 ## Entwicklung
 
@@ -43,4 +45,7 @@ npm run emu         # Emulatoren starten; dazu in .env.local VITE_USE_EMULATORS=
 npm run dev         # App unter http://localhost:5173/Buchungssystem/
 npm run build       # statische Dateien in dist/
 node scripts/set-admin-pin.mjs [--emulator]
+npm run seed:dev    # Demo-Veranstaltung im Emulator (Admin-PIN 123456, lädt die echten Regeln)
+npm run build:event -- <Ordner> <eventId>   # Seite nur für eine Veranstaltung → dist-events/<Ordner>/
+node scripts/migrate-v2.ts --in <sicherung.json>   # Altdaten überführen (Trockenlauf; siehe Kopf der Datei)
 ```

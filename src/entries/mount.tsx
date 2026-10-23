@@ -1,7 +1,7 @@
 import { MotionConfig } from 'motion/react';
 import { StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Notice, ToastProvider } from '@/ui';
+import { ToastProvider } from '@/ui';
 import '@/styles/app.css';
 
 export function mount(node: ReactNode) {
@@ -14,7 +14,3 @@ export function mount(node: ReactNode) {
   );
 }
 
-/** Temporary screen for views that arrive in packages 4–5. */
-export function Placeholder({ title, children }: { title: string; children?: ReactNode }) {
-  return <Notice title={title}>{children}</Notice>;
-}

@@ -29,6 +29,10 @@ const messages: Record<string, string> = {
   tooManyAttempts: 'Zu viele Versuche. Bitte 15 Minuten warten.',
   pinNotSet: 'Es ist noch keine Admin-PIN eingerichtet.',
   adminRequired: 'Dafür ist die Admin-PIN nötig.',
+  eventClosed: 'Diese Veranstaltung ist beendet und kann nicht mehr geändert werden.',
+  eventNotFound: 'Diese Veranstaltung gibt es nicht.',
+  badTimes: 'Das Ende muss nach dem Beginn liegen.',
+  invalid: 'Bitte die Eingabe prüfen.',
 };
 
 export class ApiError extends Error {
@@ -51,7 +55,7 @@ async function call<T>(name: string, data: unknown): Promise<T> {
 export const newRequestId = () => crypto.randomUUID();
 
 export const api = {
-  staffSession: (token: string) => call<{ customToken: string; eventId: string }>('staffSession', { token }),
+  staffSession: (token: string) => call<{ customToken: string; eventId: string; role: 'waiter' | 'bar' }>('staffSession', { token }),
   adminSession: (pin: string) => call<{ customToken: string }>('adminSession', { pin }),
   changeAdminPin: (pin: string, newPin: string) => call('changeAdminPin', { pin, newPin }),
 
@@ -71,9 +75,21 @@ export const api = {
   orderAction: (eventId: string, orderId: string, action: OrderAction) =>
     call<{ status: string }>('orderAction', { eventId, orderId, action }),
 
-  createEvent: (input: { name: string; startsAt: number; endsAt: number; mode: 'tables' | 'noTables'; copyFrom?: string }) =>
+  createEvent: (input: { name: string; startsAt: number; endsAt: number; mode: 'tables' | 'noTables'; slug?: string; copyFrom?: string }) =>
     call<{ eventId: string }>('createEvent', input),
+  updateEvent: (input: {
+    eventId: string;
+    name?: string;
+    startsAt?: number;
+    endsAt?: number;
+    language?: 'koelsch' | 'hochdeutsch';
+    archiveMinutes?: number;
+    accent?: { primary: string; secondary: string };
+    slug?: string | null;
+    status?: 'draft' | 'live';
+  }) => call('updateEvent', input),
+  closeEvent: (eventId: string) => call('closeEvent', { eventId }),
   setTables: (eventId: string, tables: { id?: string; label: string }[]) => call('setTables', { eventId, tables }),
   regenerateGuestCodes: (eventId: string) => call('regenerateGuestCodes', { eventId }),
-  rotateStaffLink: (eventId: string) => call('rotateStaffLink', { eventId }),
+  rotateStaffLink: (eventId: string, role: 'waiter' | 'bar' | 'both' = 'both') => call('rotateStaffLink', { eventId, role }),
 };

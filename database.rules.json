@@ -12,7 +12,6 @@
       "$e": {
         "public": {
           ".read": true,
-          ".write": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
           ".validate": "newData.hasChildren(['name', 'status', 'mode', 'startsAt', 'endsAt', 'language', 'archiveMinutes', 'accent'])",
           "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
           "status": { ".validate": "newData.val() == 'draft' || newData.val() == 'live' || newData.val() == 'closed'" },
@@ -21,6 +20,7 @@
           "endsAt": { ".validate": "newData.isNumber() && newData.val() > newData.parent().child('startsAt').val()" },
           "language": { ".validate": "newData.val() == 'koelsch' || newData.val() == 'hochdeutsch'" },
           "archiveMinutes": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 240" },
+          "slug": { ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9][A-Za-z0-9-]{2,39}$/)" },
           "accent": {
             "primary": { ".validate": "newData.isString() && newData.val().matches(/^#[0-9A-Fa-f]{6}$/)" },
             "secondary": { ".validate": "newData.isString() && newData.val().matches(/^#[0-9A-Fa-f]{6}$/)" },
@@ -52,7 +52,7 @@
               "image": { ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{1,40}$/)" },
               "badge": { ".validate": "newData.isString() && newData.val().length <= 10" },
               "soldOut": {
-                ".write": "auth != null && auth.token.until > now && auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val() && data.exists()",
+                ".write": "((auth != null && auth.token.until > now && auth.token.role == 'waiter' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('waiter').val()) || (auth != null && auth.token.until > now && auth.token.role == 'bar' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('bar').val())) && data.exists()",
                 ".validate": "newData.isBoolean()"
               },
               "popular": { ".validate": "newData.isBoolean()" },
@@ -83,14 +83,14 @@
         },
 
         "tables": {
-          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now || (auth != null && auth.token.until > now && auth.token.role == 'waiter' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('waiter').val()) || (auth != null && auth.token.until > now && auth.token.role == 'bar' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('bar').val())",
           "$t": {
             "label": { ".read": true }
           }
         },
 
         "bars": {
-          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now || (auth != null && auth.token.until > now && auth.token.role == 'waiter' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('waiter').val()) || (auth != null && auth.token.until > now && auth.token.role == 'bar' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('bar').val())",
           ".write": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
           "$b": {
             ".validate": "newData.hasChildren(['name'])",
@@ -101,8 +101,8 @@
         },
 
         "orders": {
-          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
-          ".indexOn": ["open"]
+          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now || ((auth != null && auth.token.until > now && auth.token.role == 'waiter' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('waiter').val()) && query.orderByChild == 'wFeed' && (query.equalTo == 'all' || query.equalTo == 'w:' + auth.uid)) || ((auth != null && auth.token.until > now && auth.token.role == 'bar' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('bar').val()) && query.orderByChild == 'bFeed' && query.equalTo == 'bar')",
+          ".indexOn": ["open", "wFeed", "bFeed"]
         },
 
         "tableStatus": {
@@ -114,9 +114,9 @@
         },
 
         "waiters": {
-          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now || (auth != null && auth.token.until > now && auth.token.role == 'waiter' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('waiter').val())",
           "$uid": {
-            ".write": "auth != null && auth.uid == $uid && auth.token.until > now && auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()",
+            ".write": "((auth != null && auth.token.until > now && auth.token.role == 'waiter' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('waiter').val()) && auth.uid == $uid) || ((auth != null && auth.token.role == 'admin' && auth.token.until > now) && data.exists())",
             ".validate": "newData.hasChildren(['name', 'lastSeen'])",
             "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
             "tableIds": { "$i": { ".validate": "newData.isString() && newData.val().length <= 40" } },
@@ -127,7 +127,7 @@
         },
 
         "plans": {
-          ".read": "auth != null && auth.token.until > now && (auth.token.role == 'admin' || (auth.token.role == 'staff' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('staffGen').val()))",
+          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now || (auth != null && auth.token.until > now && auth.token.role == 'waiter' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('waiter').val()) || (auth != null && auth.token.until > now && auth.token.role == 'bar' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('bar').val())",
           ".write": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
           "$plan": {
             ".validate": "newData.hasChildren(['name', 'image'])",
@@ -137,6 +137,10 @@
           }
         }
       }
+    },
+
+    "eventIndex": {
+      ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now"
     },
 
     "feedback": {
@@ -156,7 +160,10 @@
 
     "secrets": {
       "eventStaffToken": {
-        "$e": { ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now" }
+        "$e": {
+          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+          "waiter": { ".read": "auth != null && auth.token.until > now && auth.token.role == 'bar' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('bar').val()" }
+        }
       }
     }
   }

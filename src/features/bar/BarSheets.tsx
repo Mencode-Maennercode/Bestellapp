@@ -4,6 +4,8 @@ import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import type { Catalog } from '@shared/types';
 import { db } from '@/data/firebase';
+import { useLive } from '@/data/live';
+import { barUrl, waiterUrl } from '@/data/links';
 import { Button, cx, ProductImage, Sheet, useToast } from '@/ui';
 
 /** "Ausverkauft" without PIN: staff may only flip this one flag (database rules enforce it). */
@@ -68,21 +70,29 @@ export function SoldOutSheet({ open, onClose, eventId, catalog }: { open: boolea
   );
 }
 
-const base = import.meta.env.BASE_URL;
-
-/** Kellner link as QR for the next waiter who arrives at the bar, plus copy/share. */
-export function LinkSheet({ open, onClose, token, eventName }: { open: boolean; onClose: () => void; token: string; eventName: string }) {
+/**
+ * Kellner link as QR for the next waiter who arrives at the bar, plus copy/share.
+ * The bar may read the waiter link (database rules), but never the other way round.
+ */
+export function LinkSheet(
+  { open, onClose, eventId, token, eventName, slug }:
+  { open: boolean; onClose: () => void; eventId: string; token: string; eventName: string; slug?: string },
+) {
   const toast = useToast();
   const [which, setWhich] = useState<'kellner' | 'theke'>('kellner');
   const [svg, setSvg] = useState('');
-  const url = `${location.origin}${base}${which}/#${token}`;
+  const waiterToken = useLive<string>(open ? `secrets/eventStaffToken/${eventId}/waiter` : null);
+  const url = which === 'kellner'
+    ? (waiterToken.status === 'ready' && waiterToken.value ? waiterUrl(slug, waiterToken.value) : '')
+    : barUrl(slug, token);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !url) return;
     QRCode.toString(url, { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0a0d0b', light: '#ffffff' } }).then(setSvg, () => setSvg(''));
   }, [open, url]);
 
   const copy = async () => {
+    if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
       toast({ message: 'Link kopiert', tone: 'ok' });
@@ -90,7 +100,7 @@ export function LinkSheet({ open, onClose, token, eventName }: { open: boolean; 
       toast({ message: 'Kopieren nicht möglich', tone: 'error' });
     }
   };
-  const share = () => navigator.share?.({ title: `${which === 'kellner' ? 'Kellner' : 'Theke'} · ${eventName}`, url }).catch(() => {});
+  const share = () => url && navigator.share?.({ title: `${which === 'kellner' ? 'Kellner' : 'Theke'} · ${eventName}`, url }).catch(() => {});
 
   return (
     <Sheet open={open} onClose={onClose} title="Personal-Link" subtitle="Gilt nur für diese Veranstaltung">
@@ -117,6 +127,7 @@ export function LinkSheet({ open, onClose, token, eventName }: { open: boolean; 
         />
         <p className="max-w-[34ch] text-center text-ink-2 text-pretty">
           {which === 'kellner' ? 'Mit der Handykamera scannen, Namen eingeben, fertig.' : 'Für ein weiteres Theken-Gerät.'} Nicht an Gäste weitergeben.
+          {which === 'kellner' && waiterToken.status === 'ready' && !waiterToken.value && ' Der Link ist gerade nicht verfügbar.'}
         </p>
         <div className="grid w-full grid-cols-2 gap-2">
           <Button variant="secondary" icon={<Copy size={20} weight="bold" />} onClick={copy}>Kopieren</Button>

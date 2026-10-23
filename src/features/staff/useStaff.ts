@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { OrderAction } from '@shared/order-lifecycle';
 import type { Bar, Catalog, EventPublic, Order, SystemState, Table, WaiterProfile } from '@shared/types';
 import { ApiError, api } from '@/data/api';
 import { useLive, useOpenOrders } from '@/data/live';
-import { ensureStaffSession, staffLinkToken } from '@/data/session';
+import { isOtherEvent } from '@/data/lock';
+import { ensureStaffSession, forgetStaffLink, staffLinkToken, type StaffRole } from '@/data/session';
 import { useToast } from '@/ui';
 
 export type StaffSession =
@@ -11,22 +12,39 @@ export type StaffSession =
   | { status: 'error'; message: string }
   | { status: 'ready'; eventId: string; uid: string; token: string };
 
-/** Silent login from the link; afterwards the token leaves the address bar (screenshots, shoulder views). */
-export function useStaffSession(): StaffSession {
+const PAGE: Record<StaffRole, string> = { waiter: 'kellner', bar: 'theke' };
+const DEAD_LINK = new Set(['linkInvalid', 'linkRotated', 'eventEnded']);
+
+/**
+ * Silent login from the link; afterwards the token leaves the address bar (screenshots, shoulder views).
+ * A link of the other role (bar link on the waiter page and vice versa) is forwarded to its own page.
+ */
+export function useStaffSession(role: StaffRole): StaffSession {
   const [s, setS] = useState<StaffSession>({ status: 'loading' });
   useEffect(() => {
-    const token = staffLinkToken();
+    const token = staffLinkToken(role);
     if (!token) {
       setS({ status: 'error', message: 'Bitte den Personal-Link vom Veranstalter öffnen.' });
       return;
     }
-    ensureStaffSession(token)
+    ensureStaffSession(token, role)
       .then(r => {
+        if (r.role !== role) {
+          location.replace(`${import.meta.env.BASE_URL}${PAGE[r.role]}/#${token}`);
+          return;
+        }
+        if (isOtherEvent(r.eventId)) {
+          setS({ status: 'error', message: 'Dieser Link gehört zu einer anderen Veranstaltung. Bitte den aktuellen Link vom Veranstalter öffnen.' });
+          return;
+        }
         history.replaceState(null, '', location.pathname);
-        setS({ status: 'ready', ...r, token });
+        setS({ status: 'ready', eventId: r.eventId, uid: r.uid, token });
       })
-      .catch((e: Error) => setS({ status: 'error', message: e instanceof ApiError ? e.message : 'Verbindung fehlgeschlagen. Bitte erneut versuchen.' }));
-  }, []);
+      .catch((e: Error) => {
+        if (e instanceof ApiError && DEAD_LINK.has(e.reason)) forgetStaffLink(role);
+        setS({ status: 'error', message: e instanceof ApiError ? e.message : 'Verbindung fehlgeschlagen. Bitte erneut versuchen.' });
+      });
+  }, [role]);
   return s;
 }
 
@@ -40,21 +58,35 @@ export interface EventData {
   orders: Record<string, Order>;
 }
 
-/** Everything staff screens read, live. `error` means the session no longer has access. */
-export function useEventData(eventId: string | null): { status: 'loading' } | { status: 'error' } | { status: 'ready'; data: EventData } {
+/**
+ * Everything staff screens read, live. `error` means the session no longer has access.
+ * What is read depends on the role: the bar never gets the waiter list nor private tabs.
+ */
+export function useEventData(
+  eventId: string | null,
+  role: StaffRole,
+  uid: string | null,
+): { status: 'loading' } | { status: 'error' } | { status: 'ready'; data: EventData } {
   const ev = eventId ? `events/${eventId}` : null;
   const pub = useLive<EventPublic>(ev && `${ev}/public`);
   const system = useLive<SystemState>(ev && `${ev}/system`);
   const catalog = useLive<Catalog>(ev && `${ev}/catalog`);
   const tables = useLive<Record<string, Table>>(ev && `${ev}/tables`);
   const bars = useLive<Record<string, Bar>>(ev && `${ev}/bars`);
-  const waiters = useLive<Record<string, WaiterProfile>>(ev && `${ev}/waiters`);
-  const orders = useOpenOrders(eventId);
+  const waiters = useLive<Record<string, WaiterProfile>>(role === 'waiter' ? ev && `${ev}/waiters` : null);
+  const feeds = useMemo(
+    () =>
+      role === 'bar'
+        ? [{ child: 'bFeed' as const, value: 'bar' }]
+        : [{ child: 'wFeed' as const, value: 'all' }, { child: 'wFeed' as const, value: `w:${uid}` }],
+    [role, uid],
+  );
+  const orders = useOpenOrders(uid ? eventId : null, feeds);
   const all = [pub, system, catalog, tables, bars, waiters, orders];
   if (all.some(l => l.status === 'error')) return { status: 'error' };
   if (
     pub.status !== 'ready' || system.status !== 'ready' || catalog.status !== 'ready' || tables.status !== 'ready' ||
-    bars.status !== 'ready' || waiters.status !== 'ready' || orders.status !== 'ready' || !pub.value || !catalog.value
+    bars.status !== 'ready' || (role === 'waiter' && waiters.status !== 'ready') || orders.status !== 'ready' || !pub.value || !catalog.value
   ) {
     return { status: 'loading' };
   }
@@ -66,7 +98,7 @@ export function useEventData(eventId: string | null): { status: 'loading' } | { 
       catalog: { categories: catalog.value.categories ?? {}, products: catalog.value.products ?? {} },
       tables: tables.value ?? {},
       bars: bars.value ?? { main: { name: 'Theke', tableIds: [] } },
-      waiters: waiters.value ?? {},
+      waiters: waiters.status === 'ready' ? (waiters.value ?? {}) : {},
       orders: orders.value ?? {},
     },
   };

@@ -9,7 +9,9 @@ export type OrderType = 'order' | 'call' | 'tab';
 export type OrderSource = 'guest' | 'waiter';
 export type OrderStatus = 'new' | 'accepted' | 'ready' | 'served' | 'cancelled';
 export type Language = 'koelsch' | 'hochdeutsch';
-export type Role = 'staff' | 'admin';
+/** Waiters (Kellner) and the bar (Theke) have separate links and separate database access. */
+export type StaffRole = 'waiter' | 'bar';
+export type Role = StaffRole | 'admin';
 
 export interface Category {
   name: string;
@@ -53,6 +55,19 @@ export interface EventPublic {
   /** Minutes after which served orders and waiter calls leave the boards. */
   archiveMinutes: number;
   accent: { primary: string; secondary: string };
+  /** Folder this event is published under on the web host, e.g. "Hochzeit-Meier". */
+  slug?: string;
+}
+
+/** Admin-only list entry per event (`eventIndex/{id}`), so the admin never downloads whole events. */
+export interface EventIndexEntry {
+  name: string;
+  status: EventStatus;
+  mode: EventMode;
+  startsAt: number;
+  endsAt: number;
+  createdAt: number;
+  slug?: string;
 }
 
 export interface Bar {
@@ -113,6 +128,13 @@ export interface Order {
   countedWaiter?: string | null;
   /** True while the order should appear on boards. */
   open: boolean;
+  /**
+   * Who among the waiters may read this open order: "all" or "w:<uid>" (a private tab).
+   * Null once closed. Database rules only allow queries on exactly these values.
+   */
+  wFeed?: string | null;
+  /** "bar" while the order is open and meant for the bar; the bar link may only query this. */
+  bFeed?: 'bar' | null;
 }
 
 /** What a guest can see about their own table's orders. */

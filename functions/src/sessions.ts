@@ -2,7 +2,7 @@ import { onCall } from 'firebase-functions/v2/https';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { adminSessionInput, changePinInput, staffSessionInput } from '../../shared/schemas';
 import { sessionUntil, EVENT_GRACE_MS } from '../../shared/event-window';
-import type { EventPublic } from '../../shared/types';
+import type { EventPublic, StaffRole } from '../../shared/types';
 import { REGION, auth, db, fail, newCode, parse, paths, read, requireAdmin, sha256 } from './core';
 
 const ADMIN_SESSION_MS = 12 * 60 * 60 * 1000;
@@ -24,23 +24,23 @@ function pinMatches(pin: string, rec: PinRecord): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-/** Exchanges a staff link token for a Firebase session bound to one event. */
+/** Exchanges a waiter or bar link token for a Firebase session bound to one event and one role. */
 export const staffSession = onCall({ region: REGION }, async req => {
   const { token } = parse(staffSessionInput, req.data);
-  const link = await read<{ eventId: string }>(paths.staffToken(sha256(token)));
+  const link = await read<{ eventId: string; role: StaffRole }>(paths.staffToken(sha256(token)));
   if (!link) fail('permission-denied', 'linkInvalid');
 
   const pub = await read<EventPublic>(paths.pub(link.eventId));
   if (!pub || pub.status === 'closed' || Date.now() > pub.endsAt + EVENT_GRACE_MS) fail('permission-denied', 'eventEnded');
 
-  const uid = `staff-${link.eventId}-${newCode(12)}`;
+  const uid = `${link.role}-${link.eventId}-${newCode(12)}`;
   const customToken = await auth.createCustomToken(uid, {
-    role: 'staff',
+    role: link.role,
     eventId: link.eventId,
-    gen: (await read<number>(paths.staffGen(link.eventId))) ?? 0,
+    gen: (await read<number>(paths.gen(link.eventId, link.role))) ?? 0,
     until: sessionUntil(pub),
   });
-  return { customToken, eventId: link.eventId };
+  return { customToken, eventId: link.eventId, role: link.role };
 });
 
 async function verifyPinWithLimit(pin: string, ip: string): Promise<boolean> {
