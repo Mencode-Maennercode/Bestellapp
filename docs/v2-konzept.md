@@ -207,3 +207,9 @@ Hinweis: Hintergrund-Agenten liefen vorhin ins Wochenlimit (Reset 9 Uhr). Falls 
 - Push im Browser: FCM-Token registrieren + Service Worker — Paket 4 (`notifyWaiters` ist fertig; Emulator meldet „region outside database region", in Produktion korrekt, da DB in europe-west1).
 - Migration der Altdaten (`scripts/migrate-v2.ts`) — Paket 5.
 - Livegang braucht: IAM-Rolle für `gsc-agent@…` im Projekt `karneval-acfff`, „Service Account Token Creator" für das Functions-Dienstkonto (für Custom Tokens), Admin-PIN, Upload-Weg zu praesenzwert.de.
+
+### Paket 2 — erledigt (23.10.2026, Branch `refactor/v2`)
+- Modell: **Krea 2 Large** (18 Credits/Bild; Nano Banana Pro und GPT Flare deutlich teurer, Flare-Freistellung funktionierte nicht). ~690 Credits verbraucht, Rest ~4300.
+- Alle Bilder auf **reinem Schwarz** im gleichen Studio-Look. Freistellung im UI per `mix-blend-mode: screen` auf dunkler Karte (Glas bleibt durchsichtig). Kein Cutout-PNG nötig.
+- `public/img/drinks/{image}-512|1024.webp` (Dateiname = Katalog-Feld `image`), `fallback-{kategorie}`, `public/img/bokeh-dunkel.webp`, `public/icon-192|512.png`. Prompts + Skript: `scripts/krea-prompts.md`, `scripts/process-drink-images.mjs` (`sharp` als devDependency).
+- Offen für Paket 3: Admin-Galerie nutzt dieselben Dateien; Flasche-Wein/Sekt-Bilder sind je Sorte identisch (Kopie).
