@@ -1,3 +1,9 @@
-import { mount, Placeholder } from './mount';
+import { QrCode } from '@phosphor-icons/react';
+import { mount } from './mount';
+import { Notice } from '@/ui';
 
-mount(<Placeholder title="Bestellsystem">Bitte den QR-Code am Tisch scannen oder den Link vom Veranstalter öffnen.</Placeholder>);
+mount(
+  <Notice icon={<QrCode size={44} />} title="Bestellsystem">
+    Bitte den QR-Code an deinem Tisch scannen. Personal öffnet den Link vom Veranstalter.
+  </Notice>,
+);

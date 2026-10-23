@@ -139,6 +139,21 @@
       }
     },
 
+    "feedback": {
+      ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+      "$id": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['rating', 'createdAt'])",
+        "rating": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5 && newData.val() % 1 == 0" },
+        "name": { ".validate": "newData.isString() && newData.val().length <= 60" },
+        "email": { ".validate": "newData.isString() && newData.val().length <= 120" },
+        "message": { ".validate": "newData.isString() && newData.val().length <= 600" },
+        "eventId": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "createdAt": { ".validate": "newData.isNumber() && newData.val() <= now + 60000 && newData.val() >= now - 60000" },
+        "$other": { ".validate": false }
+      }
+    },
+
     "secrets": {
       "eventStaffToken": {
         "$e": { ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now" }

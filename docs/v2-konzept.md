@@ -213,3 +213,13 @@ Hinweis: Hintergrund-Agenten liefen vorhin ins Wochenlimit (Reset 9 Uhr). Falls 
 - Alle Bilder auf **reinem Schwarz** im gleichen Studio-Look. Freistellung im UI per `mix-blend-mode: screen` auf dunkler Karte (Glas bleibt durchsichtig). Kein Cutout-PNG nötig.
 - `public/img/drinks/{image}-512|1024.webp` (Dateiname = Katalog-Feld `image`), `fallback-{kategorie}`, `public/img/bokeh-dunkel.webp`, `public/icon-192|512.png`. Prompts + Skript: `scripts/krea-prompts.md`, `scripts/process-drink-images.mjs` (`sharp` als devDependency).
 - Offen für Paket 3: Admin-Galerie nutzt dieselben Dateien; Flasche-Wein/Sekt-Bilder sind je Sorte identisch (Kopie).
+
+### Paket 3 — erledigt (23.10.2026, Branch `refactor/v2`)
+- **Design-System** „Nacht-Event Premium“ in `src/styles/app.css` + `src/ui/` (dokumentiert in `DESIGN.md`, Produktfakten in `PRODUCT.md`). Schriften selbst gehostet: Big Shoulders Display (Zahlen/Überschriften) + Atkinson Hyperlegible Next (Text). Icons: Phosphor.
+- **Gemeinsamer Menü-Flow** `src/features/menu/` (Karte, Für-den-Tisch-Kacheln, Gläser-Abfrage, Warenkorb) — Paket 4 nutzt ihn für den Kellner (`CartSheet` hat `extra`-Slot für Merker/„an Theke senden“).
+- **Gast-Ansicht** `src/features/guest/`: Tischnummer, Bestellen, Köbes rufen (2 Tipps, 5-Min-Ring), Live-Status, Banner (pausiert/aus/beendet/Durchsage), PräsenzWert-Bewertung (1 h / +1,5 h), „Als App speichern“, Kölsch/Hochdeutsch. Letzter Code wird für die Home-Screen-App gemerkt.
+- Neue Seite `rechtliches/` (Impressum + Datenschutz, Texte unverändert übernommen).
+- Backend: `tableStatus` hat jetzt `doneAt` (Ausblenden nach `archiveMinutes`); neue Regel `feedback/` (Gäste nur anlegen, Admin lesen) + Test.
+- Bilder: Schwarzpunkt korrigiert (`scripts/clean-drink-blacks.mjs`), sonst grauer Kasten ums Glas.
+- Lokale Vorschau: `npm run emu`, `npm run seed:dev` (Demo-Veranstaltung, Optionen `--paused --shutdown --broadcast --hochdeutsch`), `npm run dev:emu` → Links werden ausgegeben.
+- Offen: Rechtstexte prüfen lassen (nennen noch „TMG“ und „3 Tage Speicherdauer“, passt nicht mehr zum Event-Modell) — vor Livegang. Apfelschorle/Sprite zeigen eine dezente Tischkante im Foto.

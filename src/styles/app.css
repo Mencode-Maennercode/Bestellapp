@@ -1,22 +1,170 @@
 @import "tailwindcss";
+@import "@fontsource-variable/big-shoulders-display";
+@import "@fontsource-variable/atkinson-hyperlegible-next";
 @source not "../../legacy";
 @source not "../../functions";
 
-/* Design tokens are finalised in package 3 (design system). */
-:root {
-  color-scheme: dark;
-  --bg: #0a0d0b;
-  --surface-1: #121714;
-  --text: #f1f5f2;
-  --muted: #9aa69f;
-  --accent: #009640;
-  --accent-2: #ffcc00;
+/*
+  Design system "Nacht-Event Premium".
+  Dark hall, phones in hand: near-black with a green cast, three surface levels with fine light edges,
+  club colours as accents (set per event at runtime), tall condensed numerals like a Kölsch-Stange.
+  Shape rule: surfaces 16px, buttons 14px, small controls (chips, steppers, badges) full pill.
+*/
+
+@theme {
+  --font-display: "Big Shoulders Display Variable", "Arial Narrow", sans-serif;
+  --font-sans: "Atkinson Hyperlegible Next Variable", system-ui, sans-serif;
+
+  --color-bg: #0a0d0b;
+  --color-surface-1: #111613;
+  --color-surface-2: #182019;
+  --color-surface-3: #212a23;
+  --color-line: rgb(214 236 222 / 0.1);
+  --color-ink: #eef3ef;
+  --color-ink-2: #aab6ae;
+  --color-ink-3: #85928a;
+
+  /* Club colours; replaced at runtime from the event settings (see ui/accent.ts). */
+  --color-accent: var(--accent, #009640);
+  --color-accent-ink: var(--accent-ink, #07100a);
+  --color-accent-2: var(--accent-2, #ffcc00);
+  --color-accent-2-ink: var(--accent-2-ink, #141006);
+
+  --color-warn: #f0a63a;
+  --color-late: #ff5d55;
+  --color-ok: #4fd88a;
+
+
+  --radius-card: 16px;
+  --radius-btn: 14px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+/* Base rules live in a layer so Tailwind utilities always win over them. */
+@layer base {
+  :root {
+    color-scheme: dark;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --gutter: clamp(16px, 4.5vw, 32px);
+    /* Fine light edge along the top of raised surfaces. */
+    --edge: inset 0 1px 0 rgb(236 255 243 / 0.07);
+    /* Light cone behind product photos, one per category (used from inline styles, so not in @theme). */
+    --color-cone-bier: #f2a43a;
+    --color-cone-wein: #ec8fae;
+    --color-cone-softdrinks: #74bdf0;
+    --color-cone-kurze: #df55c8;
+    --color-cone-glaeser: #c9d6ce;
+  }
+
+  html {
+    background: var(--color-bg);
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--color-accent-2);
+    color: var(--color-accent-2-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-2);
+    outline-offset: 3px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-surface-3) transparent;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  button:disabled {
+    cursor: default;
+  }
+
+  input,
+  textarea {
+    font: inherit;
+    color: inherit;
+    caret-color: var(--color-accent-2);
+  }
+  ::placeholder {
+    color: var(--color-ink-3);
+    opacity: 1;
+  }
+
+  a {
+    color: inherit;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+}
+
+@utility surface-1 {
+  background: var(--color-surface-1);
+  box-shadow: var(--edge);
+}
+@utility surface-2 {
+  background: var(--color-surface-2);
+  box-shadow: var(--edge);
+}
+@utility surface-3 {
+  background: var(--color-surface-3);
+  box-shadow: var(--edge);
+}
+@utility num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.01em;
+}
+@utility gutter {
+  padding-inline: var(--gutter);
+}
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes pulse-late {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(100deg, var(--color-surface-1) 40%, var(--color-surface-2) 50%, var(--color-surface-1) 60%) 0 0 / 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

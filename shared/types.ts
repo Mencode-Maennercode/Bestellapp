@@ -123,6 +123,18 @@ export interface TableStatusEntry {
   totalCents: number;
   waiterName?: string | null;
   createdAt: number;
+  /** When it was served or cancelled; the guest view hides it `archiveMinutes` later. */
+  doneAt?: number | null;
+}
+
+/** Optional guest feedback for PräsenzWert (write-only for guests). */
+export interface Feedback {
+  rating: number;
+  name?: string;
+  email?: string;
+  message?: string;
+  eventId?: string;
+  createdAt: number;
 }
 
 export interface StatsBucket {

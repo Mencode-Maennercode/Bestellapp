@@ -22,6 +22,7 @@ function statusEntry(o: StoredOrder): TableStatusEntry {
     totalCents: o.totalCents,
     waiterName: o.claimedBy?.name ?? null,
     createdAt: o.createdAt,
+    doneAt: o.servedAt ?? o.cancelledAt ?? null,
   };
 }
 

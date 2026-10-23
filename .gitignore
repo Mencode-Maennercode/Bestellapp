@@ -11,3 +11,4 @@ ui-debug.log*
 .env.*
 !.env.example
 .DS_Store
+!.env.emu

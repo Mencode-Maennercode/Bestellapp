@@ -126,3 +126,18 @@ describe('admin (PIN session)', () => {
     await assertFails(db.ref(`events/${E}/system/shutdown`).set(true));
   });
 });
+
+describe('guest feedback (PräsenzWert popup)', () => {
+  it('can be created once, never read, changed or deleted by guests', async () => {
+    const db = guest();
+    const entry = { rating: 5, message: 'Super', eventId: E, createdAt: Date.now() };
+    await assertSucceeds(db.ref('feedback/f1').set(entry));
+    await assertFails(db.ref('feedback/f1').set({ ...entry, rating: 1 }));
+    await assertFails(db.ref('feedback/f1').remove());
+    await assertFails(db.ref('feedback').get());
+    await assertFails(db.ref('feedback/f2').set({ ...entry, rating: 9 }));
+    await assertFails(db.ref('feedback/f3').set({ ...entry, extra: 'x' }));
+    await assertFails(db.ref('feedback/f4').set({ ...entry, message: 'x'.repeat(601) }));
+    await assertSucceeds(admin().ref('feedback').get());
+  });
+});

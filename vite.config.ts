@@ -18,6 +18,7 @@ export default defineConfig({
         kellner: resolve(__dirname, 'kellner/index.html'),
         theke: resolve(__dirname, 'theke/index.html'),
         admin: resolve(__dirname, 'admin/index.html'),
+        rechtliches: resolve(__dirname, 'rechtliches/index.html'),
       },
     },
   },
