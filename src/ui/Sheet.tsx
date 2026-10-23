@@ -1,5 +1,5 @@
 import { X } from '@phosphor-icons/react';
-import { AnimatePresence, motion, useDragControls, type PanInfo } from 'motion/react';
+import { AnimatePresence, m, useDragControls, type PanInfo } from 'motion/react';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from './cx';
@@ -76,7 +76,7 @@ export function Sheet({ open, onClose, title, subtitle, children, footer, level 
     <AnimatePresence>
       {open && (
         <div className={cx('fixed inset-0 flex items-end justify-center', level === 2 ? 'z-50' : 'z-40')}>
-          <motion.div
+          <m.div
             className="absolute inset-0 bg-[#020302]/72"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -84,7 +84,7 @@ export function Sheet({ open, onClose, title, subtitle, children, footer, level 
             transition={{ duration: 0.22 }}
             onClick={onClose}
           />
-          <motion.div
+          <m.div
             ref={panel}
             role="dialog"
             aria-modal="true"
@@ -130,7 +130,7 @@ export function Sheet({ open, onClose, title, subtitle, children, footer, level 
             ) : (
               <div className="h-[var(--safe-bottom)] shrink-0" />
             )}
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>,

@@ -4,6 +4,7 @@ export { Button } from './Button';
 export { CountdownRing } from './CountdownRing';
 export { cx } from './cx';
 export { Notice } from './Notice';
+export { useHideShellPhoto } from './shellPhoto';
 export { NumberGrid } from './NumberGrid';
 export { coneColor, ProductImage } from './ProductImage';
 export { Sheet } from './Sheet';

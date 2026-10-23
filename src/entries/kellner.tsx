@@ -1,4 +1,5 @@
-import { WaiterApp } from '@/features/waiter/WaiterApp';
-import { mount } from './mount';
+// Tiny entry: the stylesheet paints first, the app follows (see boot.ts).
+import '@/styles/app.css';
+import { afterFirstPaint } from './boot';
 
-mount(<WaiterApp />);
+afterFirstPaint(() => void import('./kellner-app'));

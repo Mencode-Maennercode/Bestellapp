@@ -187,7 +187,7 @@ function Bar({ eventId, token, data }: { eventId: string; token: string; data: E
         ))}
       </div>
 
-      <div className="grid flex-1 items-start gap-6 gutter pt-4 pb-[calc(var(--safe-bottom)+2rem)] lg:grid-cols-[minmax(0,1fr)_21rem]">
+      <main className="grid flex-1 items-start gap-6 gutter pt-4 pb-[calc(var(--safe-bottom)+2rem)] lg:grid-cols-[minmax(0,1fr)_21rem]">
         <section aria-labelledby="h-board" className={cx(pane !== 'board' && 'max-lg:hidden')}>
           <h2 id="h-board" className="mb-3 flex items-baseline gap-3 font-display text-[2rem] leading-none font-extrabold uppercase max-lg:sr-only">
             Zu machen {lists.todo.length > 0 && <span className="num text-ink-3">{lists.todo.length}</span>}
@@ -245,7 +245,7 @@ function Bar({ eventId, token, data }: { eventId: string; token: string; data: E
             )}
           </section>
         </aside>
-      </div>
+      </main>
 
       <SoldOutSheet open={soldOut} onClose={() => setSoldOut(false)} eventId={eventId} catalog={data.catalog} />
       <LinkSheet open={link} onClose={() => setLink(false)} eventId={eventId} token={token} eventName={data.pub.name} slug={data.pub.slug} />

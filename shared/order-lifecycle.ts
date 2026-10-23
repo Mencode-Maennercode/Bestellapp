@@ -39,7 +39,8 @@ export function withDerived<T extends Order>(o: T): T {
   // Feed keys decide who may read the order (see database.rules.json); tabs are private to their waiter.
   const wFeed = open ? (o.type === 'tab' ? `w:${o.waiterUid}` : 'all') : null;
   const bFeed = open && o.sendToBar && o.type !== 'call' ? 'bar' : null;
-  return { ...o, status: deriveStatus(o), counted, countedWaiter, open, wFeed, bFeed };
+  // The database drops empty lists: a waiter call comes back without `items`.
+  return { ...o, items: o.items ?? [], status: deriveStatus(o), counted, countedWaiter, open, wFeed, bFeed };
 }
 
 /** Pure state transition. Throws TransitionError when the action is not allowed. */

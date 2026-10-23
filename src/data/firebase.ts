@@ -1,10 +1,9 @@
 import { initializeApp } from 'firebase/app';
-import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectDatabaseEmulator, getDatabase } from 'firebase/database';
-import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
+import type { Functions } from 'firebase/functions';
 
 const env = import.meta.env;
-const useEmulators = env.VITE_USE_EMULATORS === '1';
+export const useEmulators = env.VITE_USE_EMULATORS === '1';
 
 export const app = initializeApp({
   apiKey: env.VITE_FIREBASE_API_KEY,
@@ -16,12 +15,18 @@ export const app = initializeApp({
   appId: env.VITE_FIREBASE_APP_ID,
 });
 
-export const auth = getAuth(app);
 export const db = getDatabase(app);
-export const fns = getFunctions(app, 'europe-west1');
+if (useEmulators) connectDatabaseEmulator(db, '127.0.0.1', 9000);
 
-if (useEmulators) {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  connectDatabaseEmulator(db, '127.0.0.1', 9000);
-  connectFunctionsEmulator(fns, '127.0.0.1', 5001);
+// Login lives in ./auth (staff and admin pages only); guests never load it.
+
+let functionsReady: Promise<Functions> | null = null;
+/** The Functions SDK is only needed when something is sent (an order, a call, a login), so it loads then. */
+export function functions(): Promise<Functions> {
+  functionsReady ??= import('firebase/functions').then(({ connectFunctionsEmulator, getFunctions }) => {
+    const fns = getFunctions(app, 'europe-west1');
+    if (useEmulators) connectFunctionsEmulator(fns, '127.0.0.1', 5001);
+    return fns;
+  });
+  return functionsReady;
 }

@@ -97,7 +97,6 @@ export function AdminProvider({ index, children }: { index: Record<string, Event
       tokens: v(tokens),
       closed: pub.value.status === 'closed',
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the live states are replaced on every change
   }, [ready, eventId, pub, system, catalog, tables, bars, waiters, stats, tokens]);
 
   return <AdminCtx.Provider value={{ events, eventId, select, ev, loading: !!eventId && !ev }}>{children}</AdminCtx.Provider>;

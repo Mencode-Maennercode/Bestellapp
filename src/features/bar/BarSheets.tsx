@@ -1,11 +1,11 @@
 import { Copy, ShareNetwork } from '@phosphor-icons/react';
 import { ref, set } from 'firebase/database';
-import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import type { Catalog } from '@shared/types';
 import { db } from '@/data/firebase';
 import { useLive } from '@/data/live';
 import { barUrl, waiterUrl } from '@/data/links';
+import { qrSvg } from '@/data/qr';
 import { Button, cx, ProductImage, Sheet, useToast } from '@/ui';
 
 /** "Ausverkauft" without PIN: staff may only flip this one flag (database rules enforce it). */
@@ -88,7 +88,7 @@ export function LinkSheet(
 
   useEffect(() => {
     if (!open || !url) return;
-    QRCode.toString(url, { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0a0d0b', light: '#ffffff' } }).then(setSvg, () => setSvg(''));
+    qrSvg(url).then(setSvg, () => setSvg(''));
   }, [open, url]);
 
   const copy = async () => {

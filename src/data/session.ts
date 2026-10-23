@@ -1,7 +1,8 @@
 import { signInWithCustomToken, signOut } from 'firebase/auth';
 import { TOKEN_PATTERN } from '@shared/codes';
 import { api } from './api';
-import { auth } from './firebase';
+import { auth } from './auth';
+import { hashParam } from './hash';
 
 export type StaffRole = 'waiter' | 'bar';
 
@@ -80,7 +81,3 @@ export function staffLinkToken(role: StaffRole): string | null {
   return stored && TOKEN_PATTERN.test(stored) ? stored : null;
 }
 
-/** Code or token after "#", e.g. /tisch/#K7M2P9QX4R. Never sent to the web server. */
-export function hashParam(): string {
-  return decodeURIComponent(location.hash.slice(1)).trim().toUpperCase();
-}

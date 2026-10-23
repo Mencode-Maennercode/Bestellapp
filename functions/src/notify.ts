@@ -22,7 +22,7 @@ export const notifyWaiters = onValueCreated(
     );
     if (!targets.length) return;
 
-    const items = order.items.reduce((n, i) => n + i.qty, 0);
+    const items = (order.items ?? []).reduce((n, i) => n + i.qty, 0); // calls are stored without items
     const title = order.type === 'call' ? `Tisch ${order.tableLabel} ruft` : `Neue Bestellung · Tisch ${order.tableLabel}`;
     const body = order.type === 'call' ? 'Bitte zum Tisch kommen' : `${items} Artikel · ${formatEUR(order.totalCents)}`;
 

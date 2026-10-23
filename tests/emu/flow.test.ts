@@ -146,6 +146,15 @@ describe('waiter flow', () => {
     expect(results.sort()).toEqual(['claimedByOther', 'ok']);
   });
 
+  it('a waiter call (stored without items) can be taken and done; the guest sees who comes', async () => {
+    const { orderId } = await guest.call<{ orderId: string }>('createGuestOrder', { code, type: 'call', requestId: requestId() });
+    expect(await anna.reason('orderAction', { eventId, orderId, action: 'claim' })).toBe('ok');
+    expect(await adminRead<TableStatusEntry>(`events/${eventId}/tableStatus/${code}/${orderId}`)).toMatchObject({ type: 'call', status: 'accepted', waiterName: 'Anna' });
+    expect(await anna.reason('orderAction', { eventId, orderId, action: 'serve' })).toBe('ok');
+    const done = await adminRead<TableStatusEntry>(`events/${eventId}/tableStatus/${code}/${orderId}`);
+    expect([done.status, typeof done.doneAt]).toEqual(['served', 'number']);
+  });
+
   it('keeps statistics exact under 20 parallel completions incl. undo', async () => {
     const before = (await adminRead<Stats>(`events/${eventId}/stats`)) ?? { totalCents: 0, totalOrders: 0 };
     const ids = await Promise.all(Array.from({ length: 20 }, () =>

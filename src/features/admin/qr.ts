@@ -1,9 +1,8 @@
-import QRCode from 'qrcode';
 import { guestUrl } from '@/data/links';
+import { qrSvg } from '@/data/qr';
 import type { AdminEvent } from './context';
 
-export const qrSvg = (url: string) =>
-  QRCode.toString(url, { type: 'svg', margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0a0d0b', light: '#ffffff' } });
+export { qrSvg };
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 

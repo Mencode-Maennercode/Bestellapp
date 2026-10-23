@@ -13,7 +13,8 @@ live mit, jede Veranstaltung ist strikt getrennt. Konzept und Fortschritt: [docs
 | `tisch/ kellner/ theke/ admin/` | Einstiegsseiten je Rolle |
 | `database.rules.json` | Datenbank-Regeln (Standard: alles verboten) |
 | `tests/emu/` | Regel- und Ablauf-Tests gegen den Firebase-Emulator |
-| `legacy/` | Alte Next.js-App als Referenz, wird nach dem Umbau gelöscht |
+| `tests/e2e/` | Playwright: Gast/Kellner/Theke gleichzeitig, Screenshots aller Seiten in 6 Breiten |
+| `tools/lint/` | ESLint mit eigenem TypeScript 5.9 (typescript-eslint kann TypeScript 7 noch nicht) |
 
 ## Links
 
@@ -41,6 +42,9 @@ Codes stehen hinter `#` und werden nie an den Webserver übertragen.
 npm install && (cd functions && npm install)
 npm test            # Unit-Tests (shared/)
 npm run test:emu    # Regel- + Ablauf-Tests im Emulator (braucht Java 21)
+npm run test:e2e    # Ende-zu-Ende + Responsive-Prüfung (Emulator + Build unter /Buchungssystem/); Screenshots in test-results/screens/
+npm run lint        # ESLint (einmalig: cd tools/lint && npm install)
+npm run lighthouse -- <Basis-URL>   # Lighthouse mobil, Median aus 3 Läufen je Seite
 npm run emu         # Emulatoren starten; dazu in .env.local VITE_USE_EMULATORS=1
 npm run dev         # App unter http://localhost:5173/Buchungssystem/
 npm run build       # statische Dateien in dist/

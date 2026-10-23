@@ -107,7 +107,17 @@ export function useCart(catalog: Catalog | null, storageKey: string | null) {
     [glassPrompt],
   );
 
-  const clear = useCallback(() => setRaw({}), []);
+  // Remove the stored copy right away: the waiter menu closes in the same render after sending,
+  // so the effect above would never save the empty cart and the next bon would start pre-filled.
+  const clear = useCallback(() => {
+    setRaw({});
+    if (!storageKey) return;
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch {
+      /* storage blocked */
+    }
+  }, [storageKey]);
 
   return {
     cart,

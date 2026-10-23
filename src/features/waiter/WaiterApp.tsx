@@ -10,7 +10,7 @@ import { enablePush, pushState, useWakeLock, type PushState } from '@/features/s
 import { Quiet, Sash, SystemStrip } from '@/features/staff/parts';
 import { sound, useSoundReady } from '@/features/staff/sound';
 import { sortedTables, useEventData, useOrderActions, useStaffSession, type EventData } from '@/features/staff/useStaff';
-import { Button, Notice, Sheet, Skeleton, applyAccent, cx, useToast } from '@/ui';
+import { Button, Notice, Sheet, Skeleton, applyAccent, cx, useHideShellPhoto, useToast } from '@/ui';
 import { AlarmOverlay } from './AlarmOverlay';
 import { OrderCard, type Primary } from './OrderCard';
 import { AlarmStep, NameStep, TablesStep } from './Setup';
@@ -150,6 +150,7 @@ function Board({ eventId, uid, data, profile, setProfile, takenBy }: BoardProps)
   const meRef = useMemo(() => ({ uid, tableIds: tablesKey ? tablesKey.split(',') : [] }), [uid, tablesKey]);
 
   useWakeLock(true);
+  useHideShellPhoto(); // the photo belongs to the setup steps only
 
   const lists = useMemo(() => waiterLists(data.orders, meRef, data.waiters, now), [data.orders, meRef, data.waiters, now]);
 
@@ -289,7 +290,7 @@ function Board({ eventId, uid, data, profile, setProfile, takenBy }: BoardProps)
 
       <nav aria-label="Neue Bestellung" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/94 pb-[var(--safe-bottom)] backdrop-blur-md supports-[not(backdrop-filter:blur(1px))]:bg-bg">
         <div className="mx-auto flex max-w-3xl items-center gap-2 py-2.5 gutter">
-          {!noTables && (
+          {myTables.length > 0 && (
             <div className="no-scrollbar -my-1 flex min-w-0 flex-1 gap-2 overflow-x-auto py-1">
               {myTables.map(id => (
                 <button
@@ -302,14 +303,22 @@ function Board({ eventId, uid, data, profile, setProfile, takenBy }: BoardProps)
                   {tableLabel(id)}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => setPickTable(true)}
-                className="flex min-h-14 shrink-0 items-center gap-2 rounded-[var(--radius-btn)] px-3.5 font-bold text-ink-2 hover:text-ink surface-1"
-              >
-                <TableIcon size={20} weight="bold" /> {myTables.length ? 'Andere' : 'Tisch wählen'}
-              </button>
             </div>
+          )}
+          {/* Outside the scrolling row, so it is never cut off; icon only next to my own tables. */}
+          {!noTables && (
+            <button
+              type="button"
+              onClick={() => setPickTable(true)}
+              aria-label={myTables.length ? 'Anderer Tisch' : undefined}
+              title={myTables.length ? 'Anderer Tisch' : undefined}
+              className={cx(
+                'flex min-h-14 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-btn)] font-bold text-ink-2 hover:text-ink surface-1',
+                myTables.length ? 'min-w-14' : 'flex-1 px-3.5',
+              )}
+            >
+              <TableIcon size={22} weight="bold" /> {!myTables.length && 'Tisch wählen'}
+            </button>
           )}
           <Button size="lg" icon={<Plus size={22} weight="bold" />} onClick={() => setTarget({ kind: 'tab' })} className={cx('shrink-0', noTables && 'flex-1')}>
             {noTables ? 'Neuer Schnellbon' : 'Bon'}

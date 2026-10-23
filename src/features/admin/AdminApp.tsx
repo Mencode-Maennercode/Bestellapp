@@ -3,7 +3,7 @@ import {
   type Icon,
 } from '@phosphor-icons/react';
 import { ref, set } from 'firebase/database';
-import { useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import type { EventIndexEntry } from '@shared/types';
 import { db } from '@/data/firebase';
 import { useLive } from '@/data/live';
@@ -12,14 +12,16 @@ import { applyAccent, Button, cx, Notice, Skeleton, useToast } from '@/ui';
 import { AdminProvider, useAdmin } from './context';
 import { Login } from './Login';
 import { ConfirmSheet, STATUS_LABEL, useAction } from './ui';
-import { EventsView } from './views/EventsView';
-import { MessagesView } from './views/MessagesView';
-import { OverviewView } from './views/OverviewView';
-import { ProductsView } from './views/ProductsView';
-import { SettingsView } from './views/SettingsView';
-import { StaffView } from './views/StaffView';
-import { StatsView } from './views/StatsView';
-import { TablesView } from './views/TablesView';
+
+// Each area loads when it is opened: the PIN screen needs none of them.
+const EventsView = lazy(() => import('./views/EventsView').then(m => ({ default: m.EventsView })));
+const MessagesView = lazy(() => import('./views/MessagesView').then(m => ({ default: m.MessagesView })));
+const OverviewView = lazy(() => import('./views/OverviewView').then(m => ({ default: m.OverviewView })));
+const ProductsView = lazy(() => import('./views/ProductsView').then(m => ({ default: m.ProductsView })));
+const SettingsView = lazy(() => import('./views/SettingsView').then(m => ({ default: m.SettingsView })));
+const StaffView = lazy(() => import('./views/StaffView').then(m => ({ default: m.StaffView })));
+const StatsView = lazy(() => import('./views/StatsView').then(m => ({ default: m.StatsView })));
+const TablesView = lazy(() => import('./views/TablesView').then(m => ({ default: m.TablesView })));
 
 type TabId = 'uebersicht' | 'veranstaltungen' | 'karte' | 'tische' | 'personal' | 'nachrichten' | 'statistik' | 'einstellungen';
 
@@ -81,7 +83,7 @@ function Shell() {
     if (tab === 'veranstaltungen') return <EventsView onOpen={t => setTab(t)} />;
     if (!eventId)
       return <Notice title="Noch keine Veranstaltung" action={<Button onClick={() => setTab('veranstaltungen')}>Veranstaltung anlegen</Button>}>Lege zuerst eine Veranstaltung an – dann geht es hier weiter.</Notice>;
-    if (loading || !ev) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-28" /><Skeleton className="h-64" /></div>;
+    if (loading || !ev) return <ViewLoading />;
     switch (tab) {
       case 'uebersicht': return <OverviewView onOpen={t => setTab(t)} />;
       case 'karte': return <ProductsView />;
@@ -137,7 +139,9 @@ function Shell() {
           </div>
         </nav>
       </header>
-      <main className="mx-auto max-w-6xl gutter pt-5">{body()}</main>
+      <main className="mx-auto max-w-6xl gutter pt-5">
+        <Suspense fallback={<ViewLoading />}>{body()}</Suspense>
+      </main>
     </div>
   );
 }
@@ -187,6 +191,15 @@ function EmergencyControls() {
         <p>Rückgängig mit „Wieder starten“.</p>
       </ConfirmSheet>
     </>
+  );
+}
+
+function ViewLoading() {
+  return (
+    <div className="space-y-3" aria-busy="true" aria-label="Laden">
+      <Skeleton className="h-28" />
+      <Skeleton className="h-64" />
+    </div>
   );
 }
 

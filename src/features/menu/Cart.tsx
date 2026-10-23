@@ -1,5 +1,5 @@
 import { CaretUp } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import type { ReactNode } from 'react';
 import { formatEUR } from '@shared/money';
 import type { Catalog } from '@shared/types';
@@ -14,7 +14,7 @@ export function CartBar({ cart, s, onOpen }: { cart: CartApi; s: MenuStrings; on
   return (
     <AnimatePresence>
       {visible && (
-        <motion.div
+        <m.div
           className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,var(--safe-bottom))]"
           initial={{ y: '120%' }}
           animate={{ y: 0 }}
@@ -28,16 +28,16 @@ export function CartBar({ cart, s, onOpen }: { cart: CartApi; s: MenuStrings; on
           >
             <span className="flex flex-1 flex-col items-start leading-tight">
               <span className="text-[0.9375rem] font-bold opacity-80">{s.drinks(cart.count)}</span>
-              <motion.span key={cart.total} initial={{ y: 6, opacity: 0.4 }} animate={{ y: 0, opacity: 1 }} className="num text-[1.75rem] leading-none font-extrabold">
+              <m.span key={cart.total} initial={{ y: 6, opacity: 0.4 }} animate={{ y: 0, opacity: 1 }} className="num text-[1.75rem] leading-none font-extrabold">
                 {formatEUR(cart.total)}
-              </motion.span>
+              </m.span>
             </span>
             <span className="flex min-h-12 items-center gap-1.5 rounded-[12px] bg-black/12 px-4 font-bold">
               {s.showCart}
               <CaretUp size={18} weight="bold" />
             </span>
           </button>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

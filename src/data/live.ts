@@ -23,7 +23,10 @@ export function useOpenOrders(eventId: string | null, feeds: { child: 'wFeed' | 
       onValue(
         query(ref(db, `events/${eventId}/orders`), orderByChild(f.child), equalTo(f.value)),
         snap => {
-          parts[i] = snap.val() as Record<string, Order> | null;
+          const val = snap.val() as Record<string, Order> | null;
+          // The database drops empty lists: waiter calls arrive without `items`.
+          if (val) for (const o of Object.values(val)) o.items ??= [];
+          parts[i] = val;
           emit();
         },
         error => setState({ status: 'error', error }),

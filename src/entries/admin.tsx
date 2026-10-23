@@ -1,4 +1,5 @@
-import { AdminApp } from '@/features/admin/AdminApp';
-import { mount } from './mount';
+// Tiny entry: the stylesheet paints first, the app follows (see boot.ts).
+import '@/styles/app.css';
+import { afterFirstPaint } from './boot';
 
-mount(<AdminApp />);
+afterFirstPaint(() => void import('./admin-app'));

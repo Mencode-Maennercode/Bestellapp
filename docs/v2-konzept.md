@@ -185,7 +185,7 @@ Hinweis: Hintergrund-Agenten liefen vorhin ins Wochenlimit (Reset 9 Uhr). Falls 
 ## Stand der Umsetzung
 
 ### Paket 1 — erledigt (23.10.2026, Branch `refactor/v2`)
-- Alter Stand gesichert in `backup/lokaler-stand-2026-10-23`; alte App liegt als Referenz in `legacy/` (in Paket 6 löschen).
+- Alter Stand gesichert in `backup/lokaler-stand-2026-10-23`; alte App lag als Referenz in `legacy/` (in Paket 6 gelöscht, steht weiter in `main` und im Backup-Branch).
 - `shared/`: Typen, Geld (Cent), Preisberechnung, Status-Übergänge, Statistik-Delta, Zeitfenster, Codes, zod-Schemas, Start-Katalog. 17 Unit-Tests.
 - `functions/src/`: `staffSession`, `adminSession`, `changeAdminPin`, `createGuestOrder`, `createWaiterOrder`, `orderAction`, `createEvent`, `setTables`, `regenerateGuestCodes`, `rotateStaffLink`, `notifyWaiters`. Gebündelt per esbuild (`functions/build.mjs`), Node 22.
 - `database.rules.json` strikt; 25 Emulator-Tests (`tests/emu/`) für Regeln, Preisfälschung, Doppel-Claim, 20 parallele Abschlüsse, Schnellbon, Link-Rotation, Veranstaltungsende.
@@ -203,7 +203,7 @@ Hinweis: Hintergrund-Agenten liefen vorhin ins Wochenlimit (Reset 9 Uhr). Falls 
 
 ### Offen für spätere Pakete
 - App Check (reCAPTCHA Enterprise) für `createGuestOrder` — Paket 7, braucht Schlüssel in der Firebase Console.
-- ESLint-Setup — Paket 6.
+- ~~ESLint-Setup — Paket 6.~~ erledigt (`tools/lint/`).
 - Push im Browser: FCM-Token registrieren + Service Worker — Paket 4 (`notifyWaiters` ist fertig; Emulator meldet „region outside database region", in Produktion korrekt, da DB in europe-west1).
 - Migration der Altdaten (`scripts/migrate-v2.ts`) — Paket 5.
 - Livegang braucht: IAM-Rolle für `gsc-agent@…` im Projekt `karneval-acfff`, „Service Account Token Creator" für das Functions-Dienstkonto (für Custom Tokens), Admin-PIN, Upload-Weg zu praesenzwert.de.
@@ -244,3 +244,30 @@ Hinweis: Hintergrund-Agenten liefen vorhin ins Wochenlimit (Reset 9 Uhr). Falls 
 - **`scripts/migrate-v2.ts`**: Sicherung (`--fetch <alte DB-URL>`), Trockenlauf mit Bericht, `--apply --target emulator|<neue DB-URL>`. Altdaten → **eine beendete** Veranstaltung „Karneval 2026“ (Karte mit geänderten Preisen/eigenen Getränken, Tische ohne Codes, Theken, Statistik in Cent mit Produkt-IDs, Bewertungen); `--history` macht ältere Statistik-Resets zu eigenen Archiv-Veranstaltungen. Übernimmt nie Codes, PINs, Push-Tokens oder offene Bestellungen. Die Karte der Archiv-Veranstaltung ist die Vorlage zum Duplizieren.
 - Tests: 48 Unit-Tests (u. a. Migration, CSV, Feeds/Rechte), 43 Emulator-Tests. Dev-Emulator: `seed:dev` lädt jetzt die echten Regeln in den Namespace (vorher lief die Vorschau mit offener DB) und gibt auch den Admin-Zugang aus (PIN 123456).
 - Offen: Rechtstexte prüfen (Paket 7); Tischplan-Bilder (`plans`) werden migriert, aber noch nirgends angezeigt/hochgeladen; Provision/CSV je Veranstaltung, kein Vergleich über mehrere Veranstaltungen; Live-Test mit echten Handys in Paket 6/7.
+
+### Paket 6 — erledigt (23.10.2026, Branch `refactor/v2`)
+- **Prüfungen, alle grün:** `npm run lint` (ESLint neu, in `tools/lint/` mit eigenem TypeScript 5.9, weil typescript-eslint das native TypeScript 7 noch nicht kann), `npm run typecheck`, 49 Unit-Tests, 44 Emulator-Tests, 9 Playwright-Tests (`npm run test:e2e`, startet Emulatoren selbst und testet den Build unter `/Buchungssystem/`).
+- **Ende-zu-Ende mit 3 Geräten** (`tests/e2e/flow.spec.ts`): Gast bestellt → Vollbild-Alarm beim Kellner → Übernehmen → Theke „Fertig“ (+ Rückgängig) → serviert; Gast sieht jeden Schritt; Statistik stimmt auf den Cent. Kellnerruf mit Anzeige „Jupp kütt“. Schnellbon-Privatsphäre: privater Bon nur beim eigenen Kellner, Theken-Bon bei der Theke, nie beim Kollegen, kein Alarm.
+- **Responsive** (`tests/e2e/screens.spec.ts`): alle Seiten in 360/390/430/768/1024/1920 px, Gast in Kölsch und Hochdeutsch (Personal/Admin sind nur hochdeutsch). Test schlägt fehl bei horizontalem Scrollen oder Tippflächen < 44 px auf Handys. Screenshots in `test-results/screens/`, von Hand durchgesehen.
+- **Behobene Fehler:**
+  - Kellnerruf übernehmen/erledigen ließ die Function abstürzen (Datenbank speichert leere Listen nicht → `items` fehlte): Gast sah nie, wer kommt; Push für Rufe wäre ebenfalls abgestürzt. Jetzt robust in `withDerived`, Client-Feed und `notifyWaiters`, plus Tests.
+  - Nach „Bon speichern“ war der nächste Schnellbon mit dem alten Warenkorb vorbefüllt (Gefahr doppelter Bons).
+  - Produktkarte: Der „−“-Knopf lag mitten auf der Karte → zweites Antippen zog ab statt zu addieren. Zähler sitzt jetzt oben rechts, Abzeichen unten links.
+  - Anderen Tisch-QR im selben Tab geöffnet → alte Tischnummer blieb stehen (nur `#` änderte sich). Gast/Kellner/Theke laden bei geändertem `#` neu.
+  - „System außer Betrieb“: Kellnerruf-Knopf war aktiv, der Server lehnt Rufe dann aber ab → Knopf deaktiviert.
+  - Seed-/Migrationsskript beendeten sich nicht (Antwort nicht ausgelesen).
+  - Responsive: Kellner-Leiste schnitt „Andere“ ab, Admin-Übersicht versteckte die Spalte „Wartet“ auf dem Handy, „Hinzu“-Knöpfe ragten aus der Karte, mehrere Tippflächen < 44 px, Warenkorb-Leiste schaute unter dem offenen Warenkorb hervor.
+  - Barrierefreiheit: Kontrast erledigter Bestellungen und des roten „wartet lange“-Pulses (jetzt ≥ 4,5 : 1), aktiver Schritt im Gast-Status per `aria-current`, Theke mit `<main>`, Überschriften-Reihenfolge Rechtliches, Favicon auf allen Seiten, Grammatik „1 Bestellung“.
+- **Performance:** Gäste laden keinen Firebase-Login mehr (vorher Google-Skripte von apis.google.com + iFrame auf jedem Gast-Handy); Login ohne Popup-Resolver auch bei Personal/Admin. Functions-SDK, QR-Bibliothek und Admin-Bereiche laden erst bei Bedarf, motion per `LazyMotion`. Gast- und Kellnerseite zeigen ihr Kopf-Foto direkt aus dem HTML (`#bokeh-shell`, zugeschnittene 11-KB-Variante fürs Handy); die App startet, sobald es gemalt ist (`src/entries/boot.ts`).
+- **Lighthouse mobil** (`npm run lighthouse -- <URL>`, Median aus 3, lokal gegen Emulator-Build):
+
+  | Seite | Perf | A11y | BP |
+  |---|---|---|---|
+  | Gast | 91 | 100 | 100 |
+  | Kellner | 89 | 100 | 100 |
+  | Theke | 81 | 100 | 100 |
+  | Verwaltung | 89 | 100 | 100 |
+  | Start / Rechtliches | 92 | 100 | 100 |
+
+  Ziel Perf ≥ 90 erreicht für Gast, Start, Rechtliches; Kellner/Verwaltung knapp darunter (Schwankung ±3 je Lauf), Theke 81: ihr größtes Element ist Bon-Text aus Live-Daten nach Anmeldung – braucht Login + Datenbank, statisch nicht vorziehbar. Theke läuft auf einem Gerät, das einmal am Abend lädt. Vor Livegang gegen die echte Adresse messen (Komprimierung/Caching des Hosters zählen mit).
+- Offen für Paket 7: Werte auf praesenzwert.de messen; Rechtstexte prüfen (TMG/Speicherdauer); App Check; echte Handys.

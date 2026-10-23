@@ -16,7 +16,10 @@
     "seed:dev": "node scripts/seed-dev.ts",
     "dev:emu": "vite --mode emu",
     "build:event": "node scripts/build-event.mjs",
-    "migrate": "node scripts/migrate-v2.ts"
+    "migrate": "node scripts/migrate-v2.ts",
+    "lint": "npm --prefix tools/lint exec -- eslint -c tools/lint/eslint.config.js .",
+    "test:e2e": "npm run functions:build && firebase emulators:exec --project demo-karneval --only auth,database,functions \"playwright test\"",
+    "lighthouse": "node scripts/lighthouse.mjs"
   },
   "dependencies": {
     "@fontsource-variable/atkinson-hyperlegible-next": "5.3.0",
@@ -31,6 +34,7 @@
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",
+    "@playwright/test": "1.64.1",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "25.9.9",
     "@types/qrcode": "1.5.6",

@@ -1,7 +1,6 @@
-import { httpsCallable } from 'firebase/functions';
 import type { CartLine } from '@shared/pricing';
 import type { OrderAction } from '@shared/order-lifecycle';
-import { fns } from './firebase';
+import { functions } from './firebase';
 
 /** Server error reasons mapped to messages people understand. */
 const messages: Record<string, string> = {
@@ -45,6 +44,7 @@ export class ApiError extends Error {
 
 async function call<T>(name: string, data: unknown): Promise<T> {
   try {
+    const [{ httpsCallable }, fns] = await Promise.all([import('firebase/functions'), functions()]);
     return (await httpsCallable(fns, name)(data)).data as T;
   } catch (e) {
     throw new ApiError((e as { details?: { reason?: string } }).details?.reason ?? 'network');

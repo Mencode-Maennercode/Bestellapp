@@ -54,7 +54,7 @@ export function MessagesView() {
             <TextArea label="Text" value={text} onChange={e => setText(e.target.value)} maxLength={280} placeholder="Was sollen Gäste und Personal jetzt wissen?" hint={`${text.length}/280 Zeichen`} />
             <div className="flex flex-wrap gap-2" aria-label="Vorschläge">
               {QUICK.map(q => (
-                <button key={q} type="button" onClick={() => setText(q)} className="rounded-full bg-surface-3 px-3.5 py-2 text-left text-[0.9375rem] font-bold text-ink-2 shadow-[var(--edge)] hover:text-ink">
+                <button key={q} type="button" onClick={() => setText(q)} className="min-h-11 rounded-full bg-surface-3 px-3.5 py-2 text-left text-[0.9375rem] font-bold text-ink-2 shadow-[var(--edge)] hover:text-ink">
                   {q}
                 </button>
               ))}

@@ -97,7 +97,7 @@ export function WaiterOrder({ eventId, catalog, target, onClose }: Props) {
         <Menu catalog={catalog} cart={cart} s={s} offset={HEADER} id="kellner-karte" />
       </main>
 
-      <CartBar cart={cart} s={s} onOpen={() => setOpen(true)} />
+      {!open && <CartBar cart={cart} s={s} onOpen={() => setOpen(true)} />}
       <CartSheet
         open={open}
         onClose={() => setOpen(false)}

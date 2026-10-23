@@ -19,7 +19,7 @@ const Address = () => (
 function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mt-8">
-      <h3 className="mb-2 text-lg font-bold text-ink">{title}</h3>
+      <h2 className="mb-2 text-lg font-bold text-ink">{title}</h2>
       <div className="flex flex-col gap-2.5">{children}</div>
     </section>
   );

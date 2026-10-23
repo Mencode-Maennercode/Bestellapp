@@ -78,12 +78,12 @@ export function TablesView() {
         <Card title="Tische anlegen" subtitle="Einzeln (auch „56a“) oder ein ganzer Bereich auf einmal.">
           <div className="grid gap-4 md:grid-cols-2">
             <form className="flex items-end gap-2" onSubmit={e => { e.preventDefault(); add([label]); setLabel(''); }}>
-              <TextInput label="Einzelner Tisch" value={label} onChange={e => setLabel(e.target.value)} maxLength={12} placeholder="z. B. 56a oder VIP" className="flex-1" />
+              <TextInput label="Einzelner Tisch" value={label} onChange={e => setLabel(e.target.value)} maxLength={12} placeholder="z. B. 56a oder VIP" className="min-w-0 flex-1" />
               <Button type="submit" variant="secondary" disabled={!label.trim()} icon={<Plus size={20} weight="bold" />}>Hinzu</Button>
             </form>
             <form className="flex items-end gap-2" onSubmit={e => { e.preventDefault(); if (rangeOk) { add(Array.from({ length: n }, (_, i) => String(Number(from) + i))); setTo(''); } }}>
-              <TextInput label="Bereich von" value={from} onChange={e => setFrom(e.target.value.replace(/\D/g, ''))} inputMode="numeric" className="w-24" />
-              <TextInput label="bis" value={to} onChange={e => setTo(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="60" className="w-24" />
+              <TextInput label="Bereich von" value={from} onChange={e => setFrom(e.target.value.replace(/\D/g, ''))} inputMode="numeric" className="min-w-0 flex-1 sm:w-24 sm:flex-none" />
+              <TextInput label="bis" value={to} onChange={e => setTo(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="60" className="min-w-0 flex-1 sm:w-24 sm:flex-none" />
               <Button type="submit" variant="secondary" disabled={!rangeOk} icon={<Plus size={20} weight="bold" />}>{rangeOk ? `${n} Tische` : 'Hinzu'}</Button>
             </form>
           </div>
@@ -104,7 +104,7 @@ export function TablesView() {
         {rows.length === 0 ? (
           <p className="py-6 text-center text-ink-3">Noch keine Tische. Lege sie oben an.</p>
         ) : (
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(5.25rem,1fr))] gap-2">
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(5.25rem,1fr))] gap-3">
             {rows.map((r, i) => (
               <li key={r.id ?? `n-${r.label}`} className={cx('relative flex min-h-16 items-center justify-center rounded-[var(--radius-btn)] bg-surface-3 shadow-[var(--edge)]', !r.id && 'outline-2 -outline-offset-2 outline-accent-2')}>
                 <button
@@ -121,9 +121,12 @@ export function TablesView() {
                     type="button"
                     aria-label={`Tisch ${r.label} entfernen`}
                     onClick={() => setRows(rs => rs.filter((_, j) => j !== i))}
-                    className="absolute -top-1.5 -right-1.5 grid size-7 place-items-center rounded-full bg-surface-1 text-ink-3 shadow-[var(--edge)] hover:text-late"
+                    className="group absolute -top-3 -right-3 z-10 grid size-11 place-items-center rounded-full"
                   >
-                    <X size={14} weight="bold" />
+                    {/* 44 px hit area, 28 px circle; it reaches into the 12 px grid gap, never into the next tile. */}
+                    <span className="grid size-7 place-items-center rounded-full bg-surface-1 text-ink-3 shadow-[var(--edge)] group-hover:text-late">
+                      <X size={14} weight="bold" />
+                    </span>
                   </button>
                 )}
               </li>

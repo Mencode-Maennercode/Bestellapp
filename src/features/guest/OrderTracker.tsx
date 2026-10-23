@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { formatEUR } from '@shared/money';
 import type { TableStatusEntry } from '@shared/types';
 import { cx } from '@/ui';
@@ -35,18 +35,18 @@ export function OrderTracker({ entries, t }: { entries: [string, TableStatusEntr
           const cancelled = e.status === 'cancelled';
           const steps = stepsFor(e, t);
           return (
-            <motion.li
+            <m.li
               key={id}
               layout
               initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: cancelled || e.status === 'served' ? 0.62 : 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ type: 'spring', stiffness: 380, damping: 36 }}
               className="rounded-[var(--radius-card)] bg-surface-1 px-4 pt-3.5 pb-4 shadow-[var(--edge)]"
             >
               <div className="flex items-baseline justify-between gap-3">
                 <p className="min-w-0 font-bold text-pretty">{e.type === 'call' ? t.call : e.summary}</p>
                 <p className="shrink-0 text-[0.9375rem] text-ink-3">
-                  {e.totalCents > 0 && <span className="num mr-2 text-lg font-bold text-ink-2">{formatEUR(e.totalCents)}</span>}
+                  {e.totalCents > 0 && <span className="num mr-2 text-lg font-bold text-ink-2">{formatEUR(e.totalCents)}<span className="sr-only">, </span></span>}
                   {timeFmt.format(e.createdAt)}
                 </p>
               </div>
@@ -55,9 +55,9 @@ export function OrderTracker({ entries, t }: { entries: [string, TableStatusEntr
               ) : (
                 <div className="mt-3 grid grid-cols-3 gap-1.5">
                   {steps.map((st, i) => (
-                    <div key={i} className="min-w-0">
+                    <div key={i} className="min-w-0" aria-current={st.state === 'now' ? 'step' : undefined}>
                       <div className="relative h-1.5 overflow-hidden rounded-full bg-surface-3">
-                        <motion.div
+                        <m.div
                           className={cx('absolute inset-y-0 left-0 rounded-full', st.state === 'todo' ? 'bg-transparent' : 'bg-accent')}
                           initial={false}
                           animate={{ width: st.state === 'todo' ? '0%' : '100%' }}
@@ -72,7 +72,7 @@ export function OrderTracker({ entries, t }: { entries: [string, TableStatusEntr
                   ))}
                 </div>
               )}
-            </motion.li>
+            </m.li>
           );
         })}
       </ol>

@@ -5,7 +5,6 @@ import { Button, cx } from '@/ui';
 import { Sash } from '@/features/staff/parts';
 import { TablePicker } from './TablePicker';
 
-const bokeh = `${import.meta.env.BASE_URL}img/bokeh-dunkel.webp`;
 
 function Shell({ step, steps, eventName, title, text, children, footer }: {
   step: number;
@@ -18,14 +17,14 @@ function Shell({ step, steps, eventName, title, text, children, footer }: {
 }) {
   return (
     <div className="relative isolate flex min-h-dvh flex-col">
-      <img src={bokeh} alt="" aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[46dvh] w-full object-cover opacity-45 [mask-image:linear-gradient(to_bottom,black_20%,transparent)]" />
+      {/* The confetti photo behind the steps is #bokeh-shell in kellner/index.html. */}
       <div className="pt-[var(--safe-top)]">
         <Sash />
       </div>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gutter pt-8">
         <div className="flex items-center justify-between gap-4">
           <p className="min-w-0 truncate font-bold text-ink-2">{eventName}</p>
-          <div className="flex shrink-0 gap-1.5" aria-label={`Schritt ${step} von ${steps}`}>
+          <div className="flex shrink-0 gap-1.5" role="img" aria-label={`Schritt ${step} von ${steps}`}>
             {Array.from({ length: steps }, (_, i) => (
               <span key={i} className={cx('h-1.5 w-6 rounded-full', i < step ? 'bg-accent-2' : 'bg-surface-3')} />
             ))}

@@ -130,7 +130,7 @@ function Row({
               if (e.key === 'ArrowUp') { e.preventDefault(); onMove(id, -1); }
               if (e.key === 'ArrowDown') { e.preventDefault(); onMove(id, 1); }
             }}
-            className="grid size-10 shrink-0 cursor-grab touch-none place-items-center rounded-full text-ink-3 hover:bg-surface-3 hover:text-ink active:cursor-grabbing"
+            className="grid size-11 shrink-0 cursor-grab touch-none place-items-center rounded-full text-ink-3 hover:bg-surface-3 hover:text-ink active:cursor-grabbing"
           >
             <DotsSixVertical size={22} weight="bold" />
           </button>

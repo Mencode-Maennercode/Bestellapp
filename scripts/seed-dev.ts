@@ -148,14 +148,16 @@ const rules = await fetch(`${DB}/.settings/rules.json?ns=${NS}`, {
   headers: { Authorization: 'Bearer owner' },
   body: readFileSync(new URL('../database.rules.json', import.meta.url), 'utf8'),
 });
-if (!rules.ok) throw new Error(`Rules failed: ${rules.status} ${await rules.text()}`);
+const rulesText = await rules.text(); // always read the body, otherwise the open connection keeps node alive
+if (!rules.ok) throw new Error(`Rules failed: ${rules.status} ${rulesText}`);
 
 const res = await fetch(`${DB}/.json?ns=${NS}`, {
   method: 'PUT',
   headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' },
   body: JSON.stringify({ ...data, events: { ...data.events, 'karneval-2026': archive }, eventIndex, secrets }),
 });
-if (!res.ok) throw new Error(`Seed failed: ${res.status} ${await res.text()}`);
+const resText = await res.text();
+if (!res.ok) throw new Error(`Seed failed: ${res.status} ${resText}`);
 
 for (const t of Object.values(tables)) console.log(`Tisch ${t.label}: http://localhost:5173/Buchungssystem/tisch/#${t.guestCode}`);
 console.log(`Kellner:  http://localhost:5173/Buchungssystem/kellner/#${WAITER_TOKEN}`);

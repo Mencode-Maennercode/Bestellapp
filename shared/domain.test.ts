@@ -100,6 +100,12 @@ describe('order lifecycle', () => {
     o = applyAction(o, 'serve', anna, 30);
     expect([o.status, o.counted, o.open]).toEqual(['served', true, false]);
   });
+  it('handles a waiter call read back from the database without items', () => {
+    const stored = { ...newOrder({ type: 'call', sendToBar: false, totalCents: 0 }) } as Partial<Order>;
+    delete stored.items; // the database drops empty lists
+    const o = applyAction(stored as Order, 'claim', anna, 10);
+    expect([o.status, o.items, o.bFeed]).toEqual(['accepted', [], null]);
+  });
   it('prevents a second waiter from taking a claimed order', () => {
     const o = applyAction(newOrder(), 'claim', anna, 10);
     expect(() => applyAction(o, 'claim', ben, 11)).toThrow(TransitionError);

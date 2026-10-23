@@ -47,7 +47,7 @@ export function OverviewView({ onOpen }: { onOpen: Go }) {
       {ev.pub.status === 'draft' && <Checklist onOpen={onOpen} />}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Umsatz" value={formatEUR(total)} hint={`${ev.stats?.totalOrders ?? 0} abgeschlossene Bestellungen`} />
+        <Stat label="Umsatz" value={formatEUR(total)} hint={`${ev.stats?.totalOrders ?? 0} abgeschlossene ${ev.stats?.totalOrders === 1 ? 'Bestellung' : 'Bestellungen'}`} />
         <Stat label="Offene Aufträge" value={shared.length} hint={tabs ? `+ ${tabs} Schnellbon${tabs === 1 ? '' : 's'} bei den Kellnern` : `${waiting.length} warten auf die Theke`} />
         <Stat
           label="Längste Wartezeit"
@@ -55,7 +55,7 @@ export function OverviewView({ onOpen }: { onOpen: Go }) {
           tone={oldest ? (urgencyFor(oldest, now) === 'late' ? 'late' : urgencyFor(oldest, now) === 'warn' ? 'warn' : undefined) : undefined}
           hint="Minuten:Sekunden"
         />
-        <Stat label="Kellner online" value={online} hint={`${Object.keys(ev.waiters).length} haben sich angemeldet`} />
+        <Stat label="Kellner online" value={online} hint={`${Object.keys(ev.waiters).length} ${Object.keys(ev.waiters).length === 1 ? 'hat' : 'haben'} sich angemeldet`} />
       </div>
 
       <Card title="Offene Aufträge" subtitle="Ältester zuerst. Nichts verschwindet, bis es serviert ist.">
@@ -63,14 +63,14 @@ export function OverviewView({ onOpen }: { onOpen: Go }) {
         {orders.status === 'ready' && shared.length === 0 && <p className="py-6 text-center text-ink-3">Gerade nichts offen.</p>}
         {shared.length > 0 && (
           <div className="-mx-1 overflow-x-auto">
-            <table className="w-full min-w-[34rem] text-left">
+            <table className="w-full text-left sm:min-w-[34rem]">
               <thead className="text-[0.875rem] text-ink-3">
                 <tr>
                   <th className="px-1 pb-2 font-bold">Tisch</th>
-                  <th className="px-1 pb-2 font-bold">Art</th>
+                  <th className="px-1 pb-2 font-bold max-sm:hidden">Art</th>
                   <th className="px-1 pb-2 font-bold">Kellner</th>
                   <th className="px-1 pb-2 font-bold">Stand</th>
-                  <th className="px-1 pb-2 text-right font-bold">Summe</th>
+                  <th className="px-1 pb-2 text-right font-bold max-sm:hidden">Summe</th>
                   <th className="px-1 pb-2 text-right font-bold">Wartet</th>
                 </tr>
               </thead>
@@ -79,11 +79,15 @@ export function OverviewView({ onOpen }: { onOpen: Go }) {
                   const u = urgencyFor(o.createdAt, now);
                   return (
                     <tr key={id}>
-                      <td className="num px-1 py-2.5 text-[1.5rem] leading-none font-extrabold">{o.tableLabel ?? '–'}</td>
-                      <td className="px-1 py-2.5">{typeText(o)}</td>
+                      <td className="px-1 py-2.5">
+                        <span className="num block text-[1.5rem] leading-none font-extrabold">{o.tableLabel ?? '–'}</span>
+                        {/* Phones: no room for the "Art" column, so the type sits under the table number. */}
+                        <span className="mt-1 block text-[0.8125rem] font-semibold text-ink-3 sm:hidden">{typeText(o)}</span>
+                      </td>
+                      <td className="px-1 py-2.5 max-sm:hidden">{typeText(o)}</td>
                       <td className="px-1 py-2.5 text-ink-2">{o.claimedBy?.name ?? <span className="text-warn">noch niemand</span>}</td>
                       <td className="px-1 py-2.5"><Badge tone={o.status === 'ready' ? 'accent' : 'neutral'}>{statusText[o.status]}</Badge></td>
-                      <td className="num px-1 py-2.5 text-right text-lg font-bold">{o.type === 'call' ? '' : formatEUR(o.totalCents)}</td>
+                      <td className="num px-1 py-2.5 text-right text-lg font-bold max-sm:hidden">{o.type === 'call' ? '' : formatEUR(o.totalCents)}</td>
                       <td className={cx('num px-1 py-2.5 text-right text-xl font-bold', u === 'warn' && 'text-warn', u === 'late' && 'text-late')}>{formatAge(o.createdAt, now)}</td>
                     </tr>
                   );

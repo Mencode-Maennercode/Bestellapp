@@ -16,3 +16,6 @@ ui-debug.log*
 
 # Exports of the old database contain guest e-mail addresses.
 backups/
+dist-e2e/
+test-results/
+playwright-report/

@@ -139,6 +139,32 @@
 @utility gutter {
   padding-inline: var(--gutter);
 }
+/* Confetti photo at the top of the guest page. tisch/index.html shows it before the app has loaded
+   (instant first paint); the loading skeleton keeps it, so there is no flicker when the app takes over. */
+@utility bokeh-head {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  width: 100%;
+  height: 22rem;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0.5;
+  mask-image: linear-gradient(to bottom, black 30%, transparent);
+  pointer-events: none;
+}
+/* Same idea for the waiter's setup steps (kellner/index.html). */
+@utility bokeh-staff {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  width: 100%;
+  height: 46dvh;
+  object-fit: cover;
+  opacity: 0.45;
+  mask-image: linear-gradient(to bottom, black 20%, transparent);
+  pointer-events: none;
+}
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar {
@@ -150,10 +176,11 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.45; }
 }
-/* Waiting > 6 min: the red stub breathes between full and deep red (text stays readable). */
+/* Waiting > 6 min: the red stub breathes between full and deeper red. The deep shade still gives the
+   dark text 4.8:1 (WCAG AA); darker than #e04840 would not. */
 @keyframes late-breathe {
   0%, 100% { background-color: var(--color-late); }
-  50% { background-color: #c7362f; }
+  50% { background-color: #e04840; }
 }
 .late-pulse {
   animation: late-breathe 1.4s ease-in-out infinite;

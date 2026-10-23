@@ -42,7 +42,7 @@ export function StatsView() {
         <Stat label="Umsatz" value={formatEUR(total)} />
         <Stat label="Bestellungen" value={orders} />
         <Stat label="Ø Bestellung" value={orders ? formatEUR(Math.round(total / orders)) : '–'} />
-        <Stat label="PräsenzWert-Anteil 1,5 %" value={formatEUR(commissionCents(total))} hint="vom Gesamtumsatz" />
+        <Stat label="PräsenzWert-Anteil 1,5 %" value={formatEUR(commissionCents(total))} hint="vom Gesamtumsatz" />
       </div>
 
       {!check.ok && (
@@ -53,16 +53,16 @@ export function StatsView() {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Breakdown title="Top-Artikel" unit="Stück" lines={products} onCsv={() => download(file('artikel'), linesToCsv('Artikel', 'Stück', products))} />
-        <Breakdown title="Umsatz je Tisch" unit="Bestellungen" lines={tables} onCsv={() => download(file('tische'), linesToCsv('Tisch', 'Bestellungen', tables))} />
-        <Breakdown title="Umsatz je Kellner" unit="Bestellungen" lines={waiters} onCsv={() => download(file('kellner'), linesToCsv('Kellner', 'Bestellungen', waiters))} />
+        <Breakdown title="Top-Artikel" unit={() => 'Stück'} lines={products} onCsv={() => download(file('artikel'), linesToCsv('Artikel', 'Stück', products))} />
+        <Breakdown title="Umsatz je Tisch" unit={n => (n === 1 ? 'Bestellung' : 'Bestellungen')} lines={tables} onCsv={() => download(file('tische'), linesToCsv('Tisch', 'Bestellungen', tables))} />
+        <Breakdown title="Umsatz je Kellner" unit={n => (n === 1 ? 'Bestellung' : 'Bestellungen')} lines={waiters} onCsv={() => download(file('kellner'), linesToCsv('Kellner', 'Bestellungen', waiters))} />
         <Ratings eventId={ev.id} />
       </div>
     </div>
   );
 }
 
-function Breakdown({ title, unit, lines, onCsv }: { title: string; unit: string; lines: StatLine[]; onCsv: () => void }) {
+function Breakdown({ title, unit, lines, onCsv }: { title: string; unit: (n: number) => string; lines: StatLine[]; onCsv: () => void }) {
   const max = Math.max(1, ...lines.map(l => l.cents));
   return (
     <Card
@@ -80,7 +80,7 @@ function Breakdown({ title, unit, lines, onCsv }: { title: string; unit: string;
               <span className="relative col-span-2 mt-1 block h-1.5 overflow-hidden rounded-full bg-surface-3" aria-hidden>
                 <span className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${Math.max(2, (l.cents / max) * 100)}%` }} />
               </span>
-              <span className="col-span-2 text-[0.8125rem] text-ink-3">{l.count} {unit}</span>
+              <span className="col-span-2 text-[0.8125rem] text-ink-3">{l.count} {unit(l.count)}</span>
             </li>
           ))}
         </ol>

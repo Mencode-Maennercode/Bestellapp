@@ -45,7 +45,7 @@ export function Footer({ t }: { t: GuestStrings }) {
           {t.installApp}
         </button>
       )}
-      <a href="https://www.praesenzwert.de" target="_blank" rel="noopener" className="inline-flex items-center gap-3 no-underline">
+      <a href="https://www.praesenzwert.de" target="_blank" rel="noopener" className="inline-flex min-h-11 items-center gap-3 no-underline">
         <img src={`${base}img/praesenzwert.png`} alt="" width={36} height={32} className="h-8 w-auto opacity-85" />
         <span className="text-[0.9375rem] text-ink-3">
           {t.presented} <span className="font-bold text-ink-2">PräsenzWert</span>

@@ -1,5 +1,5 @@
 import { Check, Receipt } from '@phosphor-icons/react';
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { urgencyFor } from '@shared/urgency';
 import type { Catalog, Order } from '@shared/types';
 import { Button, cx } from '@/ui';
@@ -20,7 +20,7 @@ export function BarTile({ id, order: o, catalog, now, busy, onReady }: Props) {
   const who = o.claimedBy?.name ?? o.waiterName;
   const isTab = o.type === 'tab';
   return (
-    <motion.li
+    <m.li
       layout
       initial={{ opacity: 0, scale: 0.94 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -41,7 +41,7 @@ export function BarTile({ id, order: o, catalog, now, busy, onReady }: Props) {
         )}
         <span className="min-w-0 flex-1 leading-tight">
           <span className="block truncate text-lg font-bold">{who ?? 'Noch offen'}</span>
-          <span className="block truncate text-[0.9375rem] font-semibold opacity-75">
+          <span className="block truncate text-[0.9375rem] font-semibold">
             {isTab ? o.note || 'Schnellbon' : o.source === 'guest' ? 'vom Gast' : 'vom Kellner'}
           </span>
         </span>
@@ -55,6 +55,6 @@ export function BarTile({ id, order: o, catalog, now, busy, onReady }: Props) {
           Fertig
         </Button>
       </div>
-    </motion.li>
+    </m.li>
   );
 }

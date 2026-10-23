@@ -1,5 +1,5 @@
 import { BellRinging, CheckCircle, DotsThreeVertical, HandGrabbing, Receipt } from '@phosphor-icons/react';
-import { motion, useMotionValue, useTransform, type PanInfo } from 'motion/react';
+import { m, useMotionValue, useTransform, type PanInfo } from 'motion/react';
 import { formatEUR } from '@shared/money';
 import type { OrderAction } from '@shared/order-lifecycle';
 import { urgencyFor } from '@shared/urgency';
@@ -66,7 +66,7 @@ export function OrderCard({ id, order: o, catalog, now, myUid, busy, muted, onAc
   };
 
   return (
-    <motion.li
+    <m.li
       layout
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: muted ? 0.66 : 1, y: 0 }}
@@ -75,12 +75,12 @@ export function OrderCard({ id, order: o, catalog, now, myUid, busy, muted, onAc
       className="relative overflow-hidden rounded-[var(--radius-card)]"
     >
       {primary && (
-        <motion.div aria-hidden style={{ opacity: reveal }} className="absolute inset-0 flex items-center gap-2 bg-accent pl-6 text-lg font-bold text-accent-ink">
+        <m.div aria-hidden style={{ opacity: reveal }} className="absolute inset-0 flex items-center gap-2 bg-accent pl-6 text-lg font-bold text-accent-ink">
           <CheckCircle size={26} weight="fill" />
           {primary.label}
-        </motion.div>
+        </m.div>
       )}
-      <motion.article
+      <m.article
         drag={primary ? 'x' : false}
         dragDirectionLock
         dragConstraints={{ left: 0, right: 0 }}
@@ -104,7 +104,7 @@ export function OrderCard({ id, order: o, catalog, now, myUid, busy, muted, onAc
               <span className={cx('num leading-[0.85] font-extrabold', (o.tableLabel ?? '').length > 3 ? 'text-[2rem]' : 'text-[2.875rem]')}>{o.tableLabel}</span>
             </>
           )}
-          <Age since={o.createdAt} now={now} className="text-[1.25rem] opacity-90" />
+          <Age since={o.createdAt} now={now} className="text-[1.25rem]" />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-3 py-3 pr-2 pl-3.5">
@@ -155,7 +155,7 @@ export function OrderCard({ id, order: o, catalog, now, myUid, busy, muted, onAc
             </div>
           )}
         </div>
-      </motion.article>
-    </motion.li>
+      </m.article>
+    </m.li>
   );
 }

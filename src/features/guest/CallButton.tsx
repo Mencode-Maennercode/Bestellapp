@@ -10,6 +10,8 @@ interface Props {
   cooldownMs: number;
   now: number;
   busy: boolean;
+  /** System shut down: the server refuses calls, so do not offer one. */
+  disabled?: boolean;
   onCall: () => void;
 }
 
@@ -19,7 +21,7 @@ const fmt = (ms: number) => {
 };
 
 /** Two taps to call (no accidental calls), then a ring drains until the next call is possible. */
-export function CallButton({ label, confirmLabel, cooldownUntil, cooldownMs, now, busy, onCall }: Props) {
+export function CallButton({ label, confirmLabel, cooldownUntil, cooldownMs, now, busy, disabled, onCall }: Props) {
   const [confirming, setConfirming] = useState(false);
   const left = Math.max(0, cooldownUntil - now);
 
@@ -46,6 +48,7 @@ export function CallButton({ label, confirmLabel, cooldownUntil, cooldownMs, now
       size="lg"
       variant="secondary"
       busy={busy}
+      disabled={disabled}
       icon={<BellRinging size={22} weight="fill" />}
       className={cx('w-full', confirming && '!bg-accent-2 !text-accent-2-ink')}
       onClick={() => {

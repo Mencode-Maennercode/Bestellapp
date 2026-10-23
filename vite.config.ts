@@ -15,18 +15,18 @@ const eventBuild = process.env.EVENT_BUILD === '1';
 export default defineConfig({
   base: process.env.BUILD_BASE ?? '/Buchungssystem/',
   plugins: [react(), tailwindcss()],
-  resolve: { alias: { '@shared': resolve(__dirname, 'shared'), '@': resolve(__dirname, 'src') } },
+  resolve: { alias: { '@shared': resolve(import.meta.dirname, 'shared'), '@': resolve(import.meta.dirname, 'src') } },
   build: {
     target: 'es2022',
     outDir: process.env.BUILD_OUT ?? 'dist',
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'index.html'),
-        tisch: resolve(__dirname, 'tisch/index.html'),
-        kellner: resolve(__dirname, 'kellner/index.html'),
-        theke: resolve(__dirname, 'theke/index.html'),
-        ...(eventBuild ? {} : { admin: resolve(__dirname, 'admin/index.html') }),
-        rechtliches: resolve(__dirname, 'rechtliches/index.html'),
+        index: resolve(import.meta.dirname, 'index.html'),
+        tisch: resolve(import.meta.dirname, 'tisch/index.html'),
+        kellner: resolve(import.meta.dirname, 'kellner/index.html'),
+        theke: resolve(import.meta.dirname, 'theke/index.html'),
+        ...(eventBuild ? {} : { admin: resolve(import.meta.dirname, 'admin/index.html') }),
+        rechtliches: resolve(import.meta.dirname, 'rechtliches/index.html'),
       },
     },
   },

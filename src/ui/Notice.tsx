@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
+import { useHideShellPhoto } from './shellPhoto';
 
 const bokeh = `${import.meta.env.BASE_URL}img/bokeh-dunkel.webp`;
 
 /** Full-screen state: invalid code, event ended, not started, connection problems. */
 export function Notice({ icon, title, children, action }: { icon?: ReactNode; title: ReactNode; children?: ReactNode; action?: ReactNode }) {
+  useHideShellPhoto(); // has a full-screen photo of its own
   return (
     <main className="relative isolate grid min-h-dvh items-end overflow-hidden pt-[var(--safe-top)] pb-[max(2.5rem,var(--safe-bottom))] gutter">
       <img src={bokeh} alt="" aria-hidden className="pointer-events-none absolute inset-0 -z-10 size-full object-cover opacity-55" />

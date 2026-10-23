@@ -1,5 +1,5 @@
 import { CalendarBlank, LinkBreak, Megaphone, Pause, Prohibit, WifiSlash, X } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CODE_PATTERN } from '@shared/codes';
 import { EVENT_GRACE_MS, eventGate } from '@shared/event-window';
@@ -7,7 +7,7 @@ import type { Catalog, EventPublic, SystemState, TableStatusEntry } from '@share
 import { ApiError, api, newRequestId } from '@/data/api';
 import { useLive, useNow } from '@/data/live';
 import { isOtherEvent } from '@/data/lock';
-import { hashParam } from '@/data/session';
+import { hashParam } from '@/data/hash';
 import { CartBar, CartSheet } from '@/features/menu/Cart';
 import { toLines, useCart } from '@/features/menu/useCart';
 import { Menu } from '@/features/menu/Menu';
@@ -21,7 +21,6 @@ import { guestStrings, type GuestStrings } from './strings';
 
 const CALL_COOLDOWN_MS = 5 * 60 * 1000;
 const CODE_KEY = 'guestCode';
-const bokeh = `${import.meta.env.BASE_URL}img/bokeh-dunkel.webp`;
 
 /** Code from the QR link; the installed home-screen app falls back to the last scanned code. */
 function resolveCode(): string | null {
@@ -179,7 +178,7 @@ function Guest({ t, code, eventId, pub, catalog, system, tableLabel, status, now
   return (
     <>
       <header className="relative isolate overflow-hidden">
-        <img src={bokeh} alt="" aria-hidden className="absolute inset-0 -z-10 size-full object-cover object-top opacity-50 [mask-image:linear-gradient(to_bottom,black_30%,transparent)]" />
+        {/* The confetti photo behind this header is #bokeh-shell in tisch/index.html. */}
         <div aria-hidden className="flex h-1">
           <span className="flex-1 bg-accent" />
           <span className="flex-1 bg-accent-2" />
@@ -188,14 +187,14 @@ function Guest({ t, code, eventId, pub, catalog, system, tableLabel, status, now
           <p className="max-w-[28ch] text-[0.9375rem] font-bold text-ink-2">{pub.name}</p>
           <h1 className="mt-3 flex items-end gap-3 font-display leading-[0.8] font-extrabold uppercase">
             <span className="pb-[0.32em] text-[clamp(1.75rem,7vw,2.5rem)] text-ink-2">{t.table}</span>
-            <motion.span
+            <m.span
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 26 }}
               className="text-[clamp(7rem,38vw,11rem)] tracking-[-0.01em]"
             >
               {tableLabel}
-            </motion.span>
+            </m.span>
           </h1>
           <div className="mt-6 grid max-w-xl grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
             <Button
@@ -212,6 +211,7 @@ function Guest({ t, code, eventId, pub, catalog, system, tableLabel, status, now
               cooldownMs={CALL_COOLDOWN_MS}
               now={now}
               busy={calling}
+              disabled={system.shutdown}
               onCall={callWaiter}
             />
           </div>
@@ -225,7 +225,7 @@ function Guest({ t, code, eventId, pub, catalog, system, tableLabel, status, now
         <Footer t={t} />
       </main>
 
-      {ordering && <CartBar cart={cart} s={s} onOpen={() => setCartOpen(true)} />}
+      {ordering && !cartOpen && <CartBar cart={cart} s={s} onOpen={() => setCartOpen(true)} />}
       <CartSheet
         open={cartOpen && ordering}
         onClose={() => setCartOpen(false)}
@@ -275,7 +275,7 @@ function Banners({ t, system }: { t: GuestStrings; system: SystemState }) {
       ))}
       <AnimatePresence>
         {showBroadcast && (
-          <motion.div
+          <m.div
             key={b.createdAt}
             role="status"
             initial={{ opacity: 0, y: -8 }}
@@ -300,7 +300,7 @@ function Banners({ t, system }: { t: GuestStrings; system: SystemState }) {
             >
               <X size={20} weight="bold" />
             </button>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -309,15 +309,17 @@ function Banners({ t, system }: { t: GuestStrings; system: SystemState }) {
 
 function Loading() {
   return (
-    <div className="mx-auto max-w-5xl gutter pt-[calc(var(--safe-top)+1.5rem)]" aria-busy="true" aria-label="Laden">
-      <Skeleton className="h-4 w-40 rounded-full" />
-      <Skeleton className="mt-5 h-36 w-56" />
-      <div className="mt-6 grid max-w-xl grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
-        <Skeleton className="h-14" />
-        <Skeleton className="h-14" />
-      </div>
-      <div className="mt-10 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="aspect-[3/4]" />)}
+    <div className="relative">
+      <div className="mx-auto max-w-5xl gutter pt-[calc(var(--safe-top)+1.5rem)]" aria-busy="true" aria-label="Laden">
+        <Skeleton className="h-4 w-40 rounded-full" />
+        <Skeleton className="mt-5 h-36 w-56" />
+        <div className="mt-6 grid max-w-xl grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
+          <Skeleton className="h-14" />
+          <Skeleton className="h-14" />
+        </div>
+        <div className="mt-10 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="aspect-[3/4]" />)}
+        </div>
       </div>
     </div>
   );

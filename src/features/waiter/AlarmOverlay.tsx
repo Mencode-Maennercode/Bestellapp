@@ -1,5 +1,5 @@
 import { BellRinging, HandGrabbing } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { formatEUR } from '@shared/money';
@@ -27,7 +27,7 @@ export function AlarmOverlay({ current, more, now, busy, onClaim, onLater }: Pro
   return createPortal(
     <AnimatePresence>
       {current && (
-        <motion.div
+        <m.div
           key="alarm"
           role="alertdialog"
           aria-modal="true"
@@ -45,7 +45,7 @@ export function AlarmOverlay({ current, more, now, busy, onClaim, onLater }: Pro
               <Age since={current[1].createdAt} now={now} className="ml-auto text-2xl" />
             </p>
 
-            <motion.div
+            <m.div
               key={id}
               initial={{ scale: 0.82, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -55,7 +55,7 @@ export function AlarmOverlay({ current, more, now, busy, onClaim, onLater }: Pro
               <span aria-hidden className="absolute size-[min(70vw,18rem)] rounded-full border-[6px] border-current opacity-0 [animation:alarm-ring_1.6s_var(--ease-out-expo)_infinite]" />
               <span className="mb-3 font-display text-[1.75rem] leading-none font-extrabold uppercase">Tisch</span>
               <span className="num text-[clamp(8rem,52vw,13rem)] leading-[0.82] font-extrabold">{current[1].tableLabel}</span>
-            </motion.div>
+            </m.div>
 
             {current[1].type !== 'call' && (
               <div className="mb-6 rounded-[var(--radius-card)] bg-black/10 px-4 py-3.5">
@@ -84,7 +84,7 @@ export function AlarmOverlay({ current, more, now, busy, onClaim, onLater }: Pro
               </button>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>,
     document.body,

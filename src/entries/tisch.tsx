@@ -1,4 +1,5 @@
-import { GuestApp } from '@/features/guest/GuestApp';
-import { mount } from './mount';
+// Tiny entry: the stylesheet and the header photo (tisch/index.html) paint first, the app follows.
+import '@/styles/app.css';
+import { afterFirstPaint } from './boot';
 
-mount(<GuestApp />);
+afterFirstPaint(() => void import('./tisch-app'));

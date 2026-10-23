@@ -383,7 +383,8 @@ async function main() {
   if ((await existing.json()) !== null && !flag('force')) throw new Error(`events/${opts.id} gibt es schon im Ziel. Anderes --id wählen oder --force.`);
 
   const res = await fetch(`${base}/.json${q}`, { method: 'PATCH', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify(writes) });
-  if (!res.ok) throw new Error(`Schreiben fehlgeschlagen: ${res.status} ${await res.text()}`);
+  const body = await res.text(); // read it even on success, or the open connection keeps node running
+  if (!res.ok) throw new Error(`Schreiben fehlgeschlagen: ${res.status} ${body}`);
   console.log(`\nFertig: ${Object.keys(writes).length} Pfade nach ${emulator ? 'Emulator' : base} geschrieben.`);
 }
 

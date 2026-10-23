@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from './cx';
@@ -44,7 +44,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         >
           <AnimatePresence initial={false}>
             {items.map(t => (
-              <motion.div
+              <m.div
                 key={t.id}
                 layout
                 initial={{ opacity: 0, y: -24, scale: 0.96 }}
@@ -71,7 +71,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     Rückgängig
                   </button>
                 )}
-              </motion.div>
+              </m.div>
             ))}
           </AnimatePresence>
         </div>,

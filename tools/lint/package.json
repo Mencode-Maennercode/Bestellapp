@@ -1,0 +1,14 @@
+{
+  "name": "karneval-lint",
+  "private": true,
+  "type": "module",
+  "description": "ESLint lives here with its own TypeScript 5.9, because typescript-eslint cannot use the native TypeScript 7 compiler of the app yet.",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.0"
+  }
+}

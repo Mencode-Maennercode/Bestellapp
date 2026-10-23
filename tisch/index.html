@@ -15,6 +15,9 @@
     <title>Bestellen am Tisch</title>
   </head>
   <body>
+    <!-- Header photo outside the React root: it is painted with the HTML, before any script runs,
+         and stays while the app renders the table number on top of it. -->
+    <img id="bokeh-shell" class="bokeh-head" src="/img/bokeh-kopf-800.webp" srcset="/img/bokeh-kopf-800.webp 800w, /img/bokeh-dunkel.webp 1080w" sizes="100vw" alt="" fetchpriority="high" />
     <div id="root"></div>
     <script type="module" src="/src/entries/tisch.tsx"></script>
   </body>

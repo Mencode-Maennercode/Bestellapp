@@ -1,5 +1,5 @@
 import { Plus } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'motion/react';
 import { formatEUR } from '@shared/money';
 import type { Product } from '@shared/types';
 import { Badge, cx, ProductImage, Stepper } from '@/ui';
@@ -51,17 +51,22 @@ export function ProductCard({ id, product: p, qty, onAdd, onChange, s, disabled 
         </div>
       </button>
 
-      {p.badge && <Badge className="absolute top-3 left-3">{p.badge}</Badge>}
+      {p.badge && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex aspect-square items-end p-3">
+          <Badge>{p.badge}</Badge>
+        </div>
+      )}
 
+      {/* The stepper sits in the top corner, never in the middle of the card: a second tap on the card is +1, not −1. */}
       {!off && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex aspect-square items-end justify-end p-2.5">
+        <div className={cx('pointer-events-none absolute inset-x-0 top-0 flex aspect-square justify-end p-2.5', qty > 0 ? 'items-start' : 'items-end')}>
           <AnimatePresence initial={false} mode="popLayout">
             {qty > 0 ? (
-              <motion.div key="stepper" className="pointer-events-auto" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={pop}>
+              <m.div key="stepper" className="pointer-events-auto" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={pop}>
                 <Stepper size="sm" tone="accent" value={qty} onChange={n => onChange(id, n)} label={s.qty(p.name)} />
-              </motion.div>
+              </m.div>
             ) : (
-              <motion.button
+              <m.button
                 key="plus"
                 type="button"
                 tabIndex={-1}
@@ -75,7 +80,7 @@ export function ProductCard({ id, product: p, qty, onAdd, onChange, s, disabled 
                 whileTap={{ scale: 0.88 }}
               >
                 <Plus size={20} weight="bold" />
-              </motion.button>
+              </m.button>
             )}
           </AnimatePresence>
         </div>
