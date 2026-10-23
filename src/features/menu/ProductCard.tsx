@@ -25,7 +25,8 @@ export function ProductCard({ id, product: p, qty, onAdd, onChange, s, disabled 
     <article
       className={cx(
         'relative overflow-hidden rounded-[var(--radius-card)] bg-surface-1 transition-shadow duration-300',
-        'shadow-[var(--edge)]', qty > 0 && 'outline-2 -outline-offset-2 outline-accent-2',
+        'shadow-[var(--edge)]',
+        qty > 0 && 'outline-2 -outline-offset-2 outline-accent-2',
       )}
     >
       <button
@@ -45,9 +46,7 @@ export function ProductCard({ id, product: p, qty, onAdd, onChange, s, disabled 
         <div className="flex flex-col gap-1 px-3.5 pt-2 pb-3.5">
           <h3 className="text-[1.0625rem] leading-tight font-bold text-pretty">{p.name}</h3>
           {meta && <p className="text-[0.9375rem] leading-snug text-ink-3">{meta}</p>}
-          <p className={cx('num mt-1 text-[1.75rem] leading-none font-bold', p.soldOut && 'text-ink-3 line-through decoration-2')}>
-            {formatEUR(p.priceCents)}
-          </p>
+          <p className={cx('num mt-1 text-[1.75rem] leading-none font-bold', p.soldOut && 'text-ink-3 line-through decoration-2')}>{formatEUR(p.priceCents)}</p>
         </div>
       </button>
 
@@ -62,25 +61,29 @@ export function ProductCard({ id, product: p, qty, onAdd, onChange, s, disabled 
         <div className={cx('pointer-events-none absolute inset-x-0 top-0 flex aspect-square justify-end p-2.5', qty > 0 ? 'items-start' : 'items-end')}>
           <AnimatePresence initial={false} mode="popLayout">
             {qty > 0 ? (
-              <m.div key="stepper" className="pointer-events-auto" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }} transition={pop}>
-                <Stepper size="sm" tone="accent" value={qty} onChange={n => onChange(id, n)} label={s.qty(p.name)} />
-              </m.div>
-            ) : (
-              <m.button
-                key="plus"
-                type="button"
-                tabIndex={-1}
-                aria-hidden
-                onClick={() => onAdd(id)}
-                className="pointer-events-auto grid size-11 place-items-center rounded-full bg-surface-3/90 text-ink shadow-[var(--edge)]"
+              <m.div
+                key="stepper"
+                className="pointer-events-auto"
                 initial={{ opacity: 0, scale: 0.6 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.6 }}
                 transition={pop}
-                whileTap={{ scale: 0.88 }}
+              >
+                <Stepper size="sm" tone="accent" value={qty} onChange={n => onChange(id, n)} label={s.qty(p.name)} />
+              </m.div>
+            ) : (
+              // Decorative only: taps pass through to the card button underneath (no focus, no aria warning).
+              <m.span
+                key="plus"
+                aria-hidden
+                className="grid size-11 place-items-center rounded-full bg-surface-3/90 text-ink shadow-[var(--edge)]"
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={pop}
               >
                 <Plus size={20} weight="bold" />
-              </m.button>
+              </m.span>
             )}
           </AnimatePresence>
         </div>

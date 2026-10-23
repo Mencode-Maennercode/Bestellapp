@@ -1,9 +1,12 @@
 import { ArrowLeft, Receipt } from '@phosphor-icons/react';
+import { get, ref } from 'firebase/database';
 import { useEffect, useRef, useState } from 'react';
 import type { Catalog } from '@shared/types';
 import { ApiError, api, newRequestId } from '@/data/api';
+import { db } from '@/data/firebase';
 import { CartBar, CartSheet } from '@/features/menu/Cart';
 import { Menu } from '@/features/menu/Menu';
+import type { Rank } from '@/features/menu/sections';
 import { menuStrings } from '@/features/menu/strings';
 import { toLines, useCart } from '@/features/menu/useCart';
 import { Sash, Switch } from '@/features/staff/parts';
@@ -21,10 +24,37 @@ interface Props {
 const HEADER = 'calc(var(--safe-top) + 4.25rem)';
 const s = { ...menuStrings.hochdeutsch, cartTitle: 'Bestellung prüfen' };
 
+// Last known order counts per event. The menu keeps the ranking it opened with, so cards never
+// jump while the waiter taps; fresh counts are fetched in the background for the next bon.
+const rankCache = new Map<string, Rank>();
+
+function useRank(eventId: string): Rank | undefined {
+  const [rank, setRank] = useState(() => rankCache.get(eventId));
+  useEffect(() => {
+    let alive = true;
+    get(ref(db, `events/${eventId}/stats/byProduct`))
+      .then(snap => {
+        const val = (snap.val() ?? {}) as Record<string, { qty?: number }>;
+        const next = Object.fromEntries(Object.entries(val).map(([id, v]) => [id, v.qty ?? 0]));
+        const first = !rankCache.has(eventId);
+        rankCache.set(eventId, next);
+        if (alive && first) setRank(next);
+      })
+      .catch(() => {
+        /* no counts yet or no access: the menu keeps its normal order */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [eventId]);
+  return rank;
+}
+
 /** The same menu guests use, for a table or a Schnellbon without table. */
 export function WaiterOrder({ eventId, catalog, target, onClose }: Props) {
   const toast = useToast();
   const isTab = target.kind === 'tab';
+  const rank = useRank(eventId);
   const cart = useCart(catalog, `wcart:${eventId}:${isTab ? 'tab' : target.tableId}`);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
@@ -62,10 +92,14 @@ export function WaiterOrder({ eventId, catalog, target, onClose }: Props) {
         requestId: requestId.current,
       });
       cart.clear();
-      toast({ message: isTab ? (toBar ? 'Bon gespeichert und an die Theke' : 'Bon gespeichert') : `Tisch ${target.label}: an die Theke`, tone: 'ok' });
+      toast({
+        message: isTab ? (toBar ? 'Bon gespeichert und an die Theke' : 'Bon gespeichert') : `Tisch ${target.label}: an die Theke`,
+        tone: 'ok',
+      });
       onClose();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
+      setOpen(true); // a quick send from the bar shows its error in the review sheet
     } finally {
       setSending(false);
     }
@@ -94,10 +128,21 @@ export function WaiterOrder({ eventId, catalog, target, onClose }: Props) {
       </header>
 
       <main className="mx-auto max-w-5xl gutter pb-32">
-        <Menu catalog={catalog} cart={cart} s={s} offset={HEADER} id="kellner-karte" />
+        <Menu catalog={catalog} cart={cart} s={s} offset={HEADER} id="kellner-karte" rank={rank} searchable />
       </main>
 
-      {!open && <CartBar cart={cart} s={s} onOpen={() => setOpen(true)} />}
+      {!open && (
+        <CartBar
+          cart={cart}
+          s={s}
+          onOpen={() => setOpen(true)}
+          quick={{
+            label: isTab ? (toBar ? 'Bon speichern und an die Theke' : 'Bon speichern') : 'An die Theke senden',
+            busy: sending,
+            onSend: () => void submit(),
+          }}
+        />
+      )}
       <CartSheet
         open={open}
         onClose={() => setOpen(false)}

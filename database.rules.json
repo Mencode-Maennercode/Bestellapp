@@ -110,7 +110,10 @@
         },
 
         "stats": {
-          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now"
+          ".read": "auth != null && auth.token.role == 'admin' && auth.token.until > now",
+          "byProduct": {
+            ".read": "auth != null && auth.token.until > now && auth.token.role == 'waiter' && auth.token.eventId == $e && auth.token.gen == root.child('events').child($e).child('gen').child('waiter').val()"
+          }
         },
 
         "waiters": {

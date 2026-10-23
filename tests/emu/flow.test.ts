@@ -69,7 +69,7 @@ describe('event setup', () => {
 
   it('refuses guest orders while the event is still a draft', async () => {
     expect(await guest.reason('createGuestOrder', { code, type: 'order', lines: [{ productId: 'koelsch', qty: 1 }], requestId: requestId() }))
-      .toBe('eventEnded');
+      .toBe('eventNotLive');
     await admin.call('updateEvent', { eventId, status: 'live' });
     expect((await val<Record<string, EventIndexEntry>>(admin, 'eventIndex'))[eventId].status).toBe('live');
   });
@@ -171,6 +171,9 @@ describe('waiter flow', () => {
     expect(after.totalOrders - (before.totalOrders ?? 0)).toBe(18);
     expect(after.totalCents - (before.totalCents ?? 0)).toBe(18 * 900);
     expect(after.byWaiter[annaUid].name).toBe('Anna');
+    // Waiters see how often each drink was ordered (menu ranking), but not revenue totals.
+    expect((await get(ref(anna.db, `events/${eventId}/stats/byProduct`))).val().koelsch.qty).toBeGreaterThanOrEqual(18);
+    await expect(get(ref(anna.db, `events/${eventId}/stats`))).rejects.toThrow(/permission/i);
   });
 
   it('private tabs are owned by the waiter and untouchable for colleagues', async () => {

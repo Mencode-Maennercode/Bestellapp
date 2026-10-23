@@ -37,7 +37,7 @@ function price(lines: { productId: string; qty: number }[], catalog: Parameters<
 
 function assertOpen(pub: Parameters<typeof eventGate>[0], now: number) {
   const gate = eventGate(pub, now);
-  if (gate !== 'open') fail('failed-precondition', gate === 'ended' || gate === 'notLive' ? 'eventEnded' : 'eventNotStarted');
+  if (gate !== 'open') fail('failed-precondition', gate === 'ended' ? 'eventEnded' : gate === 'notLive' ? 'eventNotLive' : 'eventNotStarted');
 }
 
 async function writeOrder(eventId: string, orderId: string, o: StoredOrder) {

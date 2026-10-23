@@ -1,4 +1,4 @@
-import { CaretUp } from '@phosphor-icons/react';
+import { CaretUp, Check, CircleNotch } from '@phosphor-icons/react';
 import { AnimatePresence, m } from 'motion/react';
 import type { ReactNode } from 'react';
 import { formatEUR } from '@shared/money';
@@ -8,8 +8,15 @@ import { isGlass, type CartApi } from './useCart';
 import { ProductRow } from './ProductRow';
 import type { MenuStrings } from './strings';
 
+/** Waiter view: send straight from the bar, without opening the review sheet. */
+export interface QuickSend {
+  label: string;
+  busy?: boolean;
+  onSend: () => void;
+}
+
 /** Floating bar at the bottom while something is in the cart. */
-export function CartBar({ cart, s, onOpen }: { cart: CartApi; s: MenuStrings; onOpen: () => void }) {
+export function CartBar({ cart, s, onOpen, quick }: { cart: CartApi; s: MenuStrings; onOpen: () => void; quick?: QuickSend }) {
   const visible = cart.count > 0 || cart.total > 0;
   return (
     <AnimatePresence>
@@ -21,22 +28,41 @@ export function CartBar({ cart, s, onOpen }: { cart: CartApi; s: MenuStrings; on
           exit={{ y: '120%' }}
           transition={{ type: 'spring', stiffness: 380, damping: 34 }}
         >
-          <button
-            type="button"
-            onClick={onOpen}
-            className="mx-auto flex min-h-16 w-full max-w-xl items-center gap-4 rounded-[18px] bg-accent py-2 pr-3 pl-5 text-accent-ink shadow-[0_14px_40px_rgb(0_0_0/0.55)] transition-transform active:scale-[0.985]"
-          >
-            <span className="flex flex-1 flex-col items-start leading-tight">
-              <span className="text-[0.9375rem] font-bold opacity-80">{s.drinks(cart.count)}</span>
-              <m.span key={cart.total} initial={{ y: 6, opacity: 0.4 }} animate={{ y: 0, opacity: 1 }} className="num text-[1.75rem] leading-none font-extrabold">
-                {formatEUR(cart.total)}
-              </m.span>
-            </span>
-            <span className="flex min-h-12 items-center gap-1.5 rounded-[12px] bg-black/12 px-4 font-bold">
-              {s.showCart}
-              <CaretUp size={18} weight="bold" />
-            </span>
-          </button>
+          <div className="mx-auto flex w-full max-w-xl gap-2">
+            <button
+              type="button"
+              onClick={onOpen}
+              className="flex min-h-16 min-w-0 flex-1 items-center gap-4 rounded-[18px] bg-accent py-2 pr-3 pl-5 text-accent-ink shadow-[0_14px_40px_rgb(0_0_0/0.55)] transition-transform active:scale-[0.985]"
+            >
+              <span className="flex flex-1 flex-col items-start leading-tight">
+                <span className="text-[0.9375rem] font-bold opacity-80">{s.drinks(cart.count)}</span>
+                <m.span
+                  key={cart.total}
+                  initial={{ y: 6, opacity: 0.4 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="num text-[1.75rem] leading-none font-extrabold"
+                >
+                  {formatEUR(cart.total)}
+                </m.span>
+              </span>
+              <span className="flex min-h-12 items-center gap-1.5 rounded-[12px] bg-black/12 px-4 font-bold">
+                <span className={quick ? 'max-[420px]:sr-only' : undefined}>{s.showCart}</span>
+                <CaretUp size={18} weight="bold" />
+              </span>
+            </button>
+            {quick && (
+              <button
+                type="button"
+                onClick={quick.onSend}
+                disabled={quick.busy}
+                aria-label={quick.label}
+                className="flex min-h-16 shrink-0 items-center gap-1.5 rounded-[18px] bg-ok px-5 text-lg font-extrabold text-[#03140a] shadow-[0_14px_40px_rgb(0_0_0/0.55)] transition-transform active:scale-[0.97] disabled:opacity-70"
+              >
+                {quick.busy ? <CircleNotch size={22} weight="bold" className="animate-spin" /> : <Check size={22} weight="bold" />}
+                OK
+              </button>
+            )}
+          </div>
         </m.div>
       )}
     </AnimatePresence>

@@ -7,6 +7,7 @@ const messages: Record<string, string> = {
   codeInvalid: 'Dieser Tisch-Code ist nicht gültig.',
   eventEnded: 'Diese Veranstaltung ist beendet.',
   eventNotStarted: 'Die Veranstaltung hat noch nicht begonnen.',
+  eventNotLive: 'Die Veranstaltung ist noch nicht live geschaltet (Admin → Veranstaltung → Live schalten).',
   shutdown: 'Das Bestellsystem ist gerade außer Betrieb.',
   ordersPaused: 'Bestellungen sind gerade pausiert.',
   cooldown: 'Bitte einen Moment warten, dann erneut versuchen.',
