@@ -16,7 +16,7 @@ const PAGE: Record<StaffRole, string> = { waiter: 'kellner', bar: 'theke' };
 const DEAD_LINK = new Set(['linkInvalid', 'linkRotated', 'eventEnded']);
 
 /**
- * Silent login from the link; afterwards the token leaves the address bar (screenshots, shoulder views).
+ * Silent login from the link; the link stays in the address bar so a reload or bookmark keeps working.
  * A link of the other role (bar link on the waiter page and vice versa) is forwarded to its own page.
  */
 export function useStaffSession(role: StaffRole, attempt = 0): StaffSession {
@@ -38,7 +38,6 @@ export function useStaffSession(role: StaffRole, attempt = 0): StaffSession {
           setS({ status: 'error', message: 'Dieser Link gehört zu einer anderen Veranstaltung. Bitte den aktuellen Link vom Veranstalter öffnen.' });
           return;
         }
-        history.replaceState(null, '', location.pathname);
         setS({ status: 'ready', eventId: r.eventId, uid: r.uid, token });
       })
       .catch((e: Error) => {
