@@ -4,6 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { eventGate } from '@shared/event-window';
 import { alarmCandidates, waiterLists, ACTIVE_WAITER_MS, type Entry } from '@shared/staff-board';
+import { auth } from '@/data/auth';
 import { db } from '@/data/firebase';
 import { useNow } from '@/data/live';
 import { enablePush, pushState, useWakeLock, type PushState } from '@/features/staff/device';
@@ -98,7 +99,18 @@ function Waiter({ eventId, uid, data }: { eventId: string; uid: string; data: Ev
         name: profile.name,
         tableIds: noTables ? [] : profile.tableIds,
         lastSeen: serverTimestamp(),
-      }).catch(() => {});
+      }).catch((e: { code?: string }) => {
+        if (!String(e?.code ?? e).toLowerCase().includes('permission')) return;
+        // The device login no longer matches the link (link renewed): log in afresh, at most once a minute.
+        try {
+          const last = Number(sessionStorage.getItem('waiterRelogin') ?? 0);
+          if (Date.now() - last < 60_000) return;
+          sessionStorage.setItem('waiterRelogin', String(Date.now()));
+        } catch {
+          return;
+        }
+        void auth.signOut().finally(() => location.reload());
+      });
     void write();
     const id = setInterval(write, 60_000);
     return () => clearInterval(id);
