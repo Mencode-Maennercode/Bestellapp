@@ -26,12 +26,13 @@ export const guestOrderInput = z.object({
 export const waiterOrderInput = z.object({
   eventId: id,
   type: z.enum(['order', 'tab']),
-  tableId: id.optional(),
-  note: z.string().trim().max(40).optional(),
+  // Firebase sends `undefined` as null, so optional fields must accept null too.
+  tableId: id.nullish(),
+  note: z.string().trim().max(40).nullish(),
   sendToBar: z.boolean().default(true),
   lines: cartLines,
   requestId,
-  name: z.string().trim().min(1).max(40).optional(),
+  name: z.string().trim().min(1).max(40).nullish(),
 });
 
 export const orderActionInput = z.object({
@@ -40,7 +41,7 @@ export const orderActionInput = z.object({
   action: z.enum(['claim', 'unclaim', 'ready', 'unready', 'serve', 'unserve', 'cancel']),
 });
 
-export const staffSessionInput = z.object({ token: z.string().regex(TOKEN_PATTERN) });
+export const staffSessionInput = z.object({ token: z.string().regex(TOKEN_PATTERN), prevUid: z.string().max(80).nullish() });
 export const adminSessionInput = z.object({ pin: z.string().regex(/^\d{4,8}$/) });
 export const changePinInput = z.object({ pin: z.string().regex(/^\d{4,8}$/), newPin: z.string().regex(/^\d{4,8}$/) });
 

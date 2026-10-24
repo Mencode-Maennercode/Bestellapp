@@ -22,6 +22,8 @@ interface Profile {
   tableIds: string[];
   tablesDone?: boolean;
   alarmAsked?: boolean;
+  /** Our entry showed up in the waiter list once; if it disappears later, the admin removed us. */
+  seen?: boolean;
 }
 
 const profileKey = (eventId: string) => `waiter:${eventId}`;
@@ -80,7 +82,14 @@ function Waiter({ eventId, uid, data }: { eventId: string; uid: string; data: Ev
     return out;
   }, [data.waiters, uid]);
 
-  const named = profile.name.length > 0;
+  const present = !!data.waiters[uid];
+  const removed = !!profile.seen && !present;
+  useEffect(() => {
+    if (removed) setProfile({ name: '', tableIds: [], alarmAsked: profile.alarmAsked });
+    else if (present && !profile.seen) setProfile({ ...profile, seen: true });
+  }, [removed, present]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const named = profile.name.length > 0 && !removed;
   // The profile is written as soon as there is a name, so the server can credit orders to it.
   useEffect(() => {
     if (!named) return;
@@ -95,7 +104,7 @@ function Waiter({ eventId, uid, data }: { eventId: string; uid: string; data: Ev
     return () => clearInterval(id);
   }, [eventId, uid, named, profile.name, profile.tableIds, noTables]);
 
-  if (!named) return <NameStep eventName={data.pub.name} steps={steps} initial="" onDone={name => setProfile({ ...profile, name })} />;
+  if (!named) return <NameStep eventName={data.pub.name} steps={steps} initial="" onDone={name => setProfile({ ...profile, name, seen: false })} />;
   if (!noTables && !profile.tablesDone)
     return (
       <TablesStep

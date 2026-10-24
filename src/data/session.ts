@@ -40,7 +40,7 @@ export async function ensureStaffSession(token: string, role: StaffRole, refresh
   if (c?.role === role && c.eventId && (c.until ?? 0) > Date.now() && storedLink(role) === token) {
     return { eventId: c.eventId, uid: auth.currentUser!.uid, role };
   }
-  const session = await api.staffSession(token);
+  const session = await api.staffSession(token, auth.currentUser?.uid);
   const cred = await signInWithCustomToken(auth, session.customToken);
   try {
     localStorage.setItem(linkKey(session.role), token);

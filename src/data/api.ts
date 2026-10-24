@@ -56,7 +56,8 @@ async function call<T>(name: string, data: unknown): Promise<T> {
 export const newRequestId = () => crypto.randomUUID();
 
 export const api = {
-  staffSession: (token: string) => call<{ customToken: string; eventId: string; role: 'waiter' | 'bar' }>('staffSession', { token }),
+  staffSession: (token: string, prevUid?: string) =>
+    call<{ customToken: string; eventId: string; role: 'waiter' | 'bar' }>('staffSession', { token, ...(prevUid ? { prevUid } : {}) }),
   adminSession: (pin: string) => call<{ customToken: string }>('adminSession', { pin }),
   changeAdminPin: (pin: string, newPin: string) => call('changeAdminPin', { pin, newPin }),
 

@@ -26,14 +26,21 @@ function pinMatches(pin: string, rec: PinRecord): boolean {
 
 /** Exchanges a waiter or bar link token for a Firebase session bound to one event and one role. */
 export const staffSession = onCall({ region: REGION }, async req => {
-  const { token } = parse(staffSessionInput, req.data);
+  const { token, prevUid } = parse(staffSessionInput, req.data);
   const link = await read<{ eventId: string; role: StaffRole }>(paths.staffToken(sha256(token)));
   if (!link) fail('permission-denied', 'linkInvalid');
 
   const pub = await read<EventPublic>(paths.pub(link.eventId));
   if (!pub || pub.status === 'closed' || Date.now() > pub.endsAt + EVENT_GRACE_MS) fail('permission-denied', 'eventEnded');
 
-  const uid = `${link.role}-${link.eventId}-${newCode(12)}`;
+  // Same device logging in again (refresh, stale token): keep its uid so no second waiter appears.
+  // A waiter the admin removed gets a fresh uid and has to enter the name again.
+  const prefix = `${link.role}-${link.eventId}-`;
+  const reuse =
+    !!prevUid?.startsWith(prefix) &&
+    /^[A-Za-z0-9_-]+$/.test(prevUid) &&
+    (link.role !== 'waiter' || (await db.ref(`${paths.waiters(link.eventId)}/${prevUid}`).get()).exists());
+  const uid = reuse ? prevUid! : `${prefix}${newCode(12)}`;
   const customToken = await auth.createCustomToken(uid, {
     role: link.role,
     eventId: link.eventId,

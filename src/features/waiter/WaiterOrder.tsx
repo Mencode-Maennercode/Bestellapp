@@ -88,7 +88,7 @@ export function WaiterOrder({ eventId, waiterName, catalog, target, onClose }: P
       await api.waiterOrder({
         eventId,
         type: isTab ? 'tab' : 'order',
-        ...(isTab ? { note: note.trim() || undefined, sendToBar: toBar } : { tableId: target.tableId }),
+        ...(isTab ? { ...(note.trim() ? { note: note.trim() } : {}), sendToBar: toBar } : { tableId: target.tableId }),
         lines: toLines(cart.cart),
         requestId: requestId.current,
         name: waiterName,

@@ -131,7 +131,7 @@ export const createWaiterOrder = onCall({ region: REGION }, async req => {
   const order = withDerived<StoredOrder>({
     type: input.type,
     source: 'waiter',
-    ...(table ? { tableId: input.tableId, tableLabel: table.label, guestCode: table.guestCode } : {}),
+    ...(table ? { tableId: input.tableId!, tableLabel: table.label, guestCode: table.guestCode } : {}),
     waiterUid: uid,
     waiterName: name,
     ...(input.type === 'tab' && input.note ? { note: input.note } : {}),
